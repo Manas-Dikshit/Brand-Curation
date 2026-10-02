@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ImportError } from "@/lib/overrides";
 
 type Result = {
@@ -18,11 +18,29 @@ type Ref = {
 };
 type Progress = { total: number; done: number; running: number; failed: number; queued: number; etaSeconds: number | null; finished: boolean };
 
-const CHIP: Record<string, { bg: string; fg: string; label: string }> = {
-  "Verified": { bg: "#dcfce7", fg: "#14532d", label: "Verified" },
-  "Evidence-based assessment": { bg: "#dbeafe", fg: "#1e3a8a", label: "Evidence-based" },
-  "Insufficient Data": { bg: "#f3f4f6", fg: "#4b5563", label: "Insufficient" },
+/** Marker class per verification state. Colour never carries the meaning alone. */
+const CHIP_CLASS: Record<string, string> = {
+  "Verified": "chip chip--verified",
+  "Evidence-based assessment": "chip chip--scored",
+  "Insufficient Data": "chip chip--unverified",
 };
+const CHIP_LABEL: Record<string, string> = {
+  "Verified": "Verified",
+  "Evidence-based assessment": "Evidence-based",
+  "Insufficient Data": "Insufficient",
+};
+
+/** Fleuron rule used as a decorative break between masthead and body. */
+function Ornament() {
+  return (
+    <svg className="ornament" width="120" height="14" viewBox="0 0 120 14" fill="none" aria-hidden="true">
+      <path d="M2 7h40M78 7h40" stroke="currentColor" strokeWidth="1" />
+      <path d="M60 1l6 6-6 6-6-6 6-6z" stroke="currentColor" strokeWidth="1" />
+      <circle cx="48" cy="7" r="1.5" fill="currentColor" />
+      <circle cx="72" cy="7" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const [ref, setRef] = useState<Ref | null>(null);
@@ -203,154 +221,269 @@ export default function Home() {
     URL.revokeObjectURL(a.href);
   }
 
-  const shown = pillar === "All" ? evals : evals.map(e => e);
-
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24, fontSize: 14 }}>
-      <h1 style={{ marginBottom: 4 }}>Brand Curation & Evaluation</h1>
-      <p style={{ color: "#666", marginTop: 0 }}>
-        Runs locally with no API keys. Evidence-gated: a score without a source URL is withheld.
-      </p>
+    <>
+      <header className="masthead">
+        <div className="masthead__topline">
+          <span>Newtail · Brand Curation Desk</span>
+          <span>Local edition · no API keys</span>
+        </div>
+        <div className="rule-double" />
+        <h1 className="masthead__title">Brand Curation <em>&amp;</em> Evaluation</h1>
+        <p className="masthead__standfirst">
+          Fifteen weighted criteria, scored only where the evidence is on the record.
+          A score without a source URL is withheld — <i>Insufficient Data</i> is never a zero.
+        </p>
+      </header>
 
-      <Section title="1. Reference validation">
-        {!ref ? "Checkingâ€¦" : (
-          <>
-            <p>
-              Sheet <b>{ref.sheet}</b> Â· {ref.criteria.length} criteria Â· total weight <b>{ref.totalWeight}</b> Â·{" "}
-              <b style={{ color: ref.ok ? "#15803d" : "#b91c1c" }}>{ref.ok ? "OK" : "BLOCKED â€” scoring disabled"}</b>
+      <main className="spread">
+        <Ornament />
+
+        {/* ---------------- 01 ---------------- */}
+        <section className="section">
+          <div className="section__head">
+            <div className="folio">01</div>
+            <div>
+              <p className="kicker">Reference</p>
+              <h2 className="section__title">The weights are read from the workbook, never typed in</h2>
+            </div>
+            <p className="section__note">
+              All 15 criterion names must match exactly and the weights must total 100, or scoring stays disabled.
             </p>
-            {ref.issues.map((i, n) => <p key={n} style={{ color: "#b91c1c" }}>{i}</p>)}
-            <details><summary style={{ cursor: "pointer" }}>Rubric notes &amp; direction warnings</summary>
-              <ul>{ref.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
-            </details>
-            <details><summary style={{ cursor: "pointer" }}>Weights per criterion</summary>
-              <ul>{ref.criteria.map(c => <li key={c.name}>{c.name} â€” {c.weight}% ({c.ruleId})</li>)}</ul>
-            </details>
-          </>
-        )}
-      </Section>
-
-      <Section title="2. Upload brand list (.xlsx: Brand, optional Website, optional Instagram)">
-        <input type="file" accept=".xlsx" onChange={e => e.target.files?.[0] && uploadBrands(e.target.files[0])} />
-        {" "}<button onClick={loadDemo} disabled={busy || !ref?.ok}>Load demo data (offline)</button>
-        {brands.length > 0 && (
-          <p>
-            {brands.length} brand(s) ready.
-            {dupes.length > 0 && <span style={{ color: "#9a6700" }}> Collapsed {dupes.length} duplicate(s): {dupes.join(", ")}</span>}
-            {" "}<button disabled={busy || !ref?.ok} onClick={run}>{busy ? "Startingâ€¦" : "Run evaluation"}</button>
-          </p>
-        )}
-      </Section>
-
-      {progress && (
-        <Section title="3. Progress">
-          <p>{progress.done}/{progress.total} done Â· {progress.running} running Â· {progress.failed} failed Â· {progress.queued} queued
-            {progress.etaSeconds !== null && progress.etaSeconds > 0 && ` Â· ~${progress.etaSeconds}s left`}</p>
-          <div style={{ background: "#e5e7eb", height: 8, borderRadius: 4 }}>
-            <div style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`, height: 8, background: "#2563eb", borderRadius: 4 }} />
           </div>
-          {progress.failed > 0 && <p><button onClick={retryFailed}>Re-run failed only</button></p>}
-          {feed.length > 0 && (
-            <pre style={{ maxHeight: 140, overflow: "auto", background: "#111", color: "#c9d1d9", padding: 8, fontSize: 11 }}>
-              {feed.slice(-14).join("\n")}
-            </pre>
-          )}
-        </Section>
-      )}
 
-      {errors.length > 0 && <Section title="Issues"><ul style={{ color: "#b91c1c" }}>{errors.map((e, i) => <li key={i}>{e}</li>)}</ul></Section>}
+          <div className="panel">
+            {!ref ? <p className="colophon">Checking the reference workbook…</p> : (
+              <>
+                <div className="factline">
+                  <span className="fact"><b>Sheet</b> {ref.sheet}</span>
+                  <span className="fact"><b>{ref.criteria.length}</b> criteria</span>
+                  <span className="fact">total weight <b>{ref.totalWeight}</b></span>
+                  <span className={ref.ok ? "good" : "bad"}>{ref.ok ? "VALIDATED" : "BLOCKED — SCORING DISABLED"}</span>
+                </div>
+                {ref.issues.length > 0 && (
+                  <ul className="plain bad">
+                    {ref.issues.map((i, n) => <li key={n}>{i}</li>)}
+                  </ul>
+                )}
+                <blockquote className="pullquote">
+                  Blocked platforms are recorded as unverifiable, never as absent.
+                  Missing data is Insufficient Data, never 0.
+                  <cite>House rules</cite>
+                </blockquote>
+                <div className="stack">
+                  <details>
+                    <summary className="index small">Rubric notes &amp; direction warnings</summary>
+                    <ul className="plain">{ref.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
+                  </details>
+                  <details>
+                    <summary className="index small">Weights per criterion</summary>
+                    <ul className="plain">{ref.criteria.map(c => <li key={c.name}>{c.name} — {c.weight}% ({c.ruleId})</li>)}</ul>
+                  </details>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
 
-      {shown.length > 0 && (
-        <Section title="4. Results">
-          <p style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <select value={pillar} onChange={e => setPillar(e.target.value)}>
-              <option>All</option>
-              {pillars.map(p => <option key={p}>{p}</option>)}
-            </select>
-            <input type="file" accept=".xlsx" onChange={e => e.target.files?.[0] && importEvidence(e.target.files[0])}
-              title="Bulk import: Brand, Criterion, Score, Evidence, Source URL" />
-            <button onClick={download}>Download Excel</button>
-          </p>
-          <p style={{ color: "#666" }}>Click a criterion row to edit it. Analyst scores need a source URL and win over auto scores.</p>
+        {/* ---------------- 02 ---------------- */}
+        <section className="section">
+          <div className="section__head">
+            <div className="folio">02</div>
+            <div>
+              <p className="kicker">The list</p>
+              <h2 className="section__title">Name the brands to research</h2>
+            </div>
+            <p className="section__note">.xlsx with Brand, optional Website, optional Instagram. Duplicates collapse.</p>
+          </div>
 
-          {shown.map(e => (
-            <details key={e.brand} style={{ border: "1px solid #e5e7eb", borderRadius: 6, marginBottom: 8, padding: 8 }} open>
-              <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-                {e.brand} â€” {e.totalPct}% Â· assessed {e.assessedWeight} Â· {e.status}
-                {e.error && <span style={{ color: "#b91c1c" }}> Â· {e.error}</span>}
-              </summary>
-              {e.status !== "Complete" && (
-                <p style={{ color: "#9a6700", margin: "4px 0" }}>
-                  Partial total â€” {e.results.filter(r => r.score === null).length} criterion/ies unscored and NOT normalised. Not comparable with a Complete brand.
-                </p>
-              )}
-              {pillar !== "All" && (
-                <p style={{ color: "#666", margin: "4px 0" }}>
-                  {pillar} subtotal: {e.pillarSubtotals[pillar] ?? 0} pts
-                </p>
-              )}
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb" }}>
-                    <th>Pillar</th><th>Criterion</th><th>Score</th><th>Wt</th><th>Status</th><th>Source</th><th>Rule</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {e.results.filter(r => pillar === "All" || ref?.criteria.find(c => c.name === r.name)?.pillar === pillar).map(r => {
-                    const c = ref?.criteria.find(x => x.name === r.name);
-                    const chip = CHIP[r.verification] ?? CHIP["Insufficient Data"];
-                    const open = expanded[`${e.brand}|${r.name}`];
-                    return (
-                      <Fragment key={r.name}>
-                        <tr style={{ borderBottom: "1px solid #f3f4f6", background: r.score === null ? "#fafafa" : undefined }}>
-                          <td style={{ color: "#666" }}>{c?.pillar ?? ""}</td>
-                          <td>
-                            <button style={{ background: "none", border: 0, padding: 0, textAlign: "left", cursor: "pointer", textDecoration: "underline" }}
-                              onClick={() => setExpanded(x => ({ ...x, [`${e.brand}|${r.name}`]: !x[`${e.brand}|${r.name}`] }))}>
-                              {r.name}
-                            </button>
-                          </td>
-                          <td align="center">{r.score ?? "â€”"}</td>
-                          <td align="center">{c?.weight}</td>
-                          <td><span style={{ background: chip.bg, color: chip.fg, padding: "1px 6px", borderRadius: 8, fontSize: 11 }}>{chip.label}</span></td>
-                          <td style={{ fontSize: 11 }}>{r.source}{r.source === "analyst" && " âœŽ"}</td>
-                          <td style={{ fontSize: 11, color: "#666" }}>{r.ruleId ?? "â€”"}</td>
-                        </tr>
-                        {open && (
-                          <tr>
-                            <td colSpan={7} style={{ background: "#f9fafb", padding: 8 }}>
-                              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
-                                <label>Score
-                                  <input type="number" min={0} max={5} style={{ width: 60, marginLeft: 4 }}
-                                    value={r.score ?? ""}
-                                    onChange={ev => {
-                                      const v = ev.target.value;
-                                      override(e.brand, r.name, v === "" ? { score: null, verification: "Insufficient Data" } : { score: Number(v) });
-                                    }} />
-                                </label>
-                                <span style={{ fontSize: 11, color: "#666" }}>0-5, integer, blank = Insufficient Data</span>
-                              </div>
-                              <OverrideEditor brand={e.brand} r={r} onSave={patch => override(e.brand, r.name, patch)} />
-                              {r.evidence && <p style={{ margin: "6px 0" }}><b>Evidence:</b> {r.evidence}</p>}
-                              {r.sourceUrl && <p style={{ margin: "6px 0" }}><b>Source:</b> <a href={r.sourceUrl} target="_blank" rel="noreferrer">{r.sourceUrl}</a></p>}
-                              {r.missing && <p style={{ margin: "6px 0", color: "#9a6700" }}><b>Missing / notes:</b> {r.missing}</p>}
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </details>
-          ))}
-        </Section>
-      )}
+          <div className="panel stack">
+            <div className="row">
+              <input type="file" accept=".xlsx" aria-label="Brand list"
+                onChange={e => e.target.files?.[0] && uploadBrands(e.target.files[0])} />
+              <button className="btn" onClick={loadDemo} disabled={busy || !ref?.ok}>Load demo data (offline)</button>
+            </div>
+            {brands.length > 0 && (
+              <div className="row">
+                <span className="lede">{brands.length} brand{brands.length === 1 ? "" : "s"} ready.</span>
+                {dupes.length > 0 && <span className="warn">Collapsed {dupes.length} duplicate(s): {dupes.join(", ")}</span>}
+                <button className="btn btn--accent" disabled={busy || !ref?.ok} onClick={run}>
+                  {busy ? "Starting…" : "Run evaluation"}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
 
-      <p style={{ color: "#666", marginTop: 24 }}>
-        Blocked platforms are recorded as unverifiable, never as absent. Missing data is Insufficient Data, never 0.
-      </p>
-    </main>
+        {/* ---------------- 03 ---------------- */}
+        {progress && (
+          <section className="section">
+            <div className="section__head">
+              <div className="folio">03</div>
+              <div>
+                <p className="kicker">In progress</p>
+                <h2 className="section__title">The desk is working</h2>
+              </div>
+              <p className="section__note">
+                {progress.done}/{progress.total} done · {progress.running} running · {progress.failed} failed · {progress.queued} queued
+                {progress.etaSeconds !== null && progress.etaSeconds > 0 && ` · ~${progress.etaSeconds}s left`}
+              </p>
+            </div>
+            <div className="progress">
+              <div className="progress__fill" style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+            </div>
+            {progress.failed > 0 && (
+              <p className="row" style={{ marginTop: 10 }}>
+                <button className="btn" onClick={retryFailed}>Re-run failed only</button>
+              </p>
+            )}
+            {feed.length > 0 && <pre className="feed">{feed.slice(-14).join("\n")}</pre>}
+          </section>
+        )}
+
+        {/* ---------------- issues ---------------- */}
+        {errors.length > 0 && (
+          <section className="section">
+            <div className="section__head">
+              <div className="folio">!</div>
+              <div>
+                <p className="kicker">Issues</p>
+                <h2 className="section__title">What needs your attention</h2>
+              </div>
+            </div>
+            <div className="panel">
+              <ul className="plain bad">{errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+            </div>
+          </section>
+        )}
+
+        {/* ---------------- 04 ---------------- */}
+        {evals.length > 0 && (
+          <section className="section">
+            <div className="section__head">
+              <div className="folio">04</div>
+              <div>
+                <p className="kicker">The record</p>
+                <h2 className="section__title">Scores, and everything behind them</h2>
+              </div>
+              <p className="section__note">
+                Open a criterion to read its evidence or file an analyst score. Analyst scores need a source URL
+                and win over the automatic ones.
+              </p>
+            </div>
+
+            <div className="row" style={{ marginBottom: 8 }}>
+              <select value={pillar} onChange={e => setPillar(e.target.value)} aria-label="Filter by pillar">
+                <option>All</option>
+                {pillars.map(p => <option key={p}>{p}</option>)}
+              </select>
+              <input type="file" accept=".xlsx" aria-label="Import analyst evidence"
+                title="Bulk import: Brand, Criterion, Score, Evidence, Source URL"
+                onChange={e => e.target.files?.[0] && importEvidence(e.target.files[0])} />
+              <button className="btn btn--accent" onClick={download}>Download Excel</button>
+            </div>
+
+            {evals.map(e => (
+              <article className="card" key={e.brand}>
+                <div className="card__head">
+                  <div>
+                    <h3 className="card__brand">{e.brand}</h3>
+                    <p className="card__meta">
+                      {e.status} · assessed {e.assessedWeight} of 100 weight
+                      {e.durationMs ? ` · ${(e.durationMs / 1000).toFixed(1)}s` : ""}
+                    </p>
+                    {e.error && <p className="bad">{e.error}</p>}
+                  </div>
+                  <p className="card__score">
+                    <span className="card__pct">{e.totalPct}<sup>%</sup></span>
+                    <span className="card__sub">weighted score</span>
+                  </p>
+                </div>
+
+                {e.status !== "Complete" && (
+                  <p className="warn">
+                    Partial total — {e.results.filter(r => r.score === null).length} criterion/ies unscored and NOT
+                    normalised. Not comparable with a Complete brand.
+                  </p>
+                )}
+
+                <div className="subtotals">
+                  {(Object.keys(e.pillarSubtotals).length ? Object.keys(e.pillarSubtotals) : pillars).map(p => (
+                    <div key={p}>{p} <b>{e.pillarSubtotals[p] ?? 0}</b></div>
+                  ))}
+                </div>
+
+                <table className="sheet">
+                  <thead>
+                    <tr>
+                      <th className="pillar">Pillar</th>
+                      <th>Criterion</th>
+                      <th className="num">Score</th>
+                      <th className="num">Wt</th>
+                      <th>Status</th>
+                      <th>Source</th>
+                      <th>Rule</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {e.results
+                      .filter(r => pillar === "All" || ref?.criteria.find(c => c.name === r.name)?.pillar === pillar)
+                      .map(r => {
+                        const c = ref?.criteria.find(x => x.name === r.name);
+                        const open = expanded[`${e.brand}|${r.name}`];
+                        return (
+                          <Fragment key={r.name}>
+                            <tr className={r.score === null ? "is-unscored" : undefined}>
+                              <td className="pillar">{c?.pillar ?? ""}</td>
+                              <td>
+                                <button className="criterion"
+                                  onClick={() => setExpanded(x => ({ ...x, [`${e.brand}|${r.name}`]: !x[`${e.brand}|${r.name}`] }))}>
+                                  {r.name}
+                                </button>
+                              </td>
+                              <td className="num score">{r.score ?? "—"}</td>
+                              <td className="num">{c?.weight}</td>
+                              <td>
+                                <span className={CHIP_CLASS[r.verification] ?? CHIP_CLASS["Insufficient Data"]}>
+                                  {CHIP_LABEL[r.verification] ?? "Insufficient"}
+                                </span>
+                              </td>
+                              <td className="provenance">{r.source}{r.source === "analyst" && " ✎"}</td>
+                              <td className="ruleid">{r.ruleId ?? "—"}</td>
+                            </tr>
+                            {open && (
+                              <tr>
+                                <td className="pillar" />
+                                <td colSpan={6}>
+                                  <div className="detail">
+                                    <OverrideEditor brand={e.brand} r={r} onSave={patch => override(e.brand, r.name, patch)} />
+                                    <dl>
+                                      {r.evidence && (<><dt>Evidence</dt><dd className="lede">{r.evidence}</dd></>)}
+                                      {r.sourceUrl && (<><dt>Source</dt><dd><a href={r.sourceUrl} target="_blank" rel="noreferrer">{r.sourceUrl}</a></dd></>)}
+                                      {r.missing && (<><dt>Missing</dt><dd className="warn">{r.missing}</dd></>)}
+                                    </dl>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </article>
+            ))}
+          </section>
+        )}
+
+        <Ornament />
+        <p className="colophon dropcap">
+          Every figure here traces to a URL a reviewer can open. Where the public record does not
+          support a score, the column says so instead of guessing — that is what keeps a partial
+          total from being read as a verdict.
+        </p>
+      </main>
+    </>
   );
 }
 
@@ -361,21 +494,23 @@ function OverrideEditor({ brand, r, onSave }: { brand: string; r: Result; onSave
   const [verification, setVerification] = useState<string>(r.verification);
   const [msg, setMsg] = useState("");
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-        <label>
+    <div className="editor">
+      <div className="row">
+        <label className="small">
           Score{" "}
           <input type="number" min={0} max={5} step={1} style={{ width: 70 }} value={score}
             onChange={e => setScore(e.target.value)} placeholder="—" />
         </label>
-        <select value={verification} onChange={e => setVerification(e.target.value)}>
+        <select value={verification} aria-label="Verification status" onChange={e => setVerification(e.target.value)}>
           <option>Verified</option>
           <option>Evidence-based assessment</option>
           <option>Insufficient Data</option>
         </select>
-        <input placeholder="Evidence (required for a score)" value={evidence} onChange={e => setEvidence(e.target.value)} style={{ flex: "1 1 320px" }} />
-        <input placeholder="https:// source URL (required)" value={url} onChange={e => setUrl(e.target.value)} style={{ flex: "1 1 320px" }} />
-        <button onClick={() => {
+        <input placeholder="Evidence (required for a score)" value={evidence} aria-label="Evidence"
+          onChange={e => setEvidence(e.target.value)} />
+        <input placeholder="https:// source URL (required)" value={url} aria-label="Source URL"
+          onChange={e => setUrl(e.target.value)} />
+        <button className="btn" onClick={() => {
           if (score === "") return onSave({ score: null, verification: "Insufficient Data", evidence, sourceUrl: url });
           const n = Number(score);
           if (!Number.isInteger(n) || n < 0 || n > 5) return setMsg("Score must be an integer 0-5.");
@@ -383,18 +518,9 @@ function OverrideEditor({ brand, r, onSave }: { brand: string; r: Result; onSave
           setMsg("");
           onSave({ score: n, evidence, sourceUrl: url, verification: verification as Result["verification"], missing: "" });
         }}>Save analyst score</button>
+        <span className="small">0–5, integer. Blank means Insufficient Data.</span>
       </div>
-      {msg && <span style={{ color: "#b91c1c" }}>{msg}</span>}
-      <small style={{ color: "#666" }}>Brand: {brand} · criterion: {r.name}</small>
+      {msg && <span className="bad">{msg}</span>}
     </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0 }}>{title}</h3>
-      {children}
-    </section>
   );
 }
