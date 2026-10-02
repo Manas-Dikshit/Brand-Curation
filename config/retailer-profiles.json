@@ -1,0 +1,11 @@
+{
+  "_comment": "Target retail partners' stated category needs, used by R13 retailer-demand-fit. priceMin/priceMax are the price slot each partner buys into.",
+  "version": "1.0.0",
+  "profiles": [
+    { "name": "Modern Trade (pharmacy)", "categories": ["personal-care", "supplements", "baby-care", "home-care"], "priceMin": 50, "priceMax": 1500 },
+    { "name": "Premium Beauty", "categories": ["skincare", "fragrance"], "priceMin": 300, "priceMax": 6000 },
+    { "name": "Grocery & Gourmet", "categories": ["food-snacks", "beverages", "supplements"], "priceMin": 100, "priceMax": 3000 },
+    { "name": "Lifestyle & Fashion", "categories": ["fragrance", "womens-wellness", "haircare-devices"], "priceMin": 200, "priceMax": 8000 },
+    { "name": "Electronics Retail", "categories": ["haircare-devices"], "priceMin": 500, "priceMax": 50000 }
+  ]
+}
