@@ -1,0 +1,226 @@
+{
+  "version": "1.0.0",
+  "priceRange": { "currency": "INR", "min": 150, "max": 800 },
+  "ruleIds": {
+    "price": "R01-price-fit",
+    "margin": "R02-high-margin",
+    "repeat": "R03-repeat-retention",
+    "revenue": "R04-revenue-track-record",
+    "pmf": "R05-digital-pmf",
+    "category": "R06-category-demand",
+    "marketing": "R07-marketing-activity",
+    "qcommerce": "R08-quick-commerce",
+    "packaging": "R09-packaging-signals",
+    "reviews": "R10-reviews",
+    "visibility": "R11-visibility-investment",
+    "whitespace": "R12-offline-whitespace",
+    "retailer": "R13-retailer-demand-fit",
+    "social": "R14-social-presence",
+    "sellthrough": "R15-sell-through"
+  },
+  "R01_price_fit": {
+    "description": "% of products whose price falls inside priceRange",
+    "bands": [
+      { "score": 5, "minPct": 80 },
+      { "score": 4, "minPct": 60 },
+      { "score": 3, "minPct": 40 },
+      { "score": 2, "minPct": 20 },
+      { "score": 1, "minPct": 0.0001 },
+      { "score": 0, "minPct": 0 }
+    ]
+  },
+  "R02_high_margin": {
+    "description": "Margin proxy from MRP/compare_at_price gaps only. Proxy, not margin.",
+    "gapBands": [
+      { "score": 5, "minGapPct": 50 },
+      { "score": 4, "minGapPct": 35 },
+      { "score": 3, "minGapPct": 25 },
+      { "score": 2, "minGapPct": 15 },
+      { "score": 1, "minGapPct": 1 },
+      { "score": 0, "minGapPct": 0 }
+    ],
+    "statedMarginBands": [
+      { "score": 5, "minPct": 60 },
+      { "score": 4, "minPct": 45 },
+      { "score": 3, "minPct": 30 },
+      { "score": 2, "minPct": 15 },
+      { "score": 1, "minPct": 1 }
+    ],
+    "minGapSampleSize": 3
+  },
+  "R03_repeat_retention": {
+    "description": "Evidence of subscription / auto-replenish / loyalty on brand's own site",
+    "capWithoutStatedRate": 3,
+    "signalScores": {
+      "subscription_app": 3,
+      "subscribe_and_save_text": 3,
+      "auto_replenish": 3,
+      "loyalty_program": 2,
+      "refund_policy": 0,
+      "none": null
+    },
+    "statedRepeatRateBands": [
+      { "score": 5, "minPct": 40 },
+      { "score": 4, "minPct": 25 },
+      { "score": 3, "minPct": 15 },
+      { "score": 2, "minPct": 5 },
+      { "score": 1, "minPct": 0.0001 }
+    ]
+  },
+  "R04_revenue_track_record": {
+    "description": "Revenue/funding/orders from Wikipedia or allow-listed credible press. Size bands are INR.",
+    "bands": [
+      { "score": 5, "min": 1000000000, "label": "Rs 100 Cr+ revenue/funding" },
+      { "score": 4, "min": 200000000, "label": "Rs 20 Cr+ revenue/funding" },
+      { "score": 3, "min": 50000000, "label": "Rs 5 Cr+ revenue/funding" },
+      { "score": 2, "min": 10000000, "label": "Rs 1 Cr+ revenue/funding" },
+      { "score": 1, "min": 1000000, "label": "Rs 10 L+ revenue/funding" }
+    ],
+    "maxAgeYears": 3
+  },
+  "R05_digital_pmf": {
+    "description": "Product feed + review volume + verifiable marketplace listings",
+    "weights": { "feed": 2, "reviews": 2, "marketplaces": 1 },
+    "feedScores": { "shopify_json": 5, "jsonld_products": 3, "sitemap_only": 1, "none": 0 },
+    "reviewBands": [
+      { "score": 5, "minCount": 1000 },
+      { "score": 4, "minCount": 250 },
+      { "score": 3, "minCount": 100 },
+      { "score": 2, "minCount": 25 },
+      { "score": 1, "minCount": 1 }
+    ],
+    "marketplaceBands": [
+      { "score": 5, "minCount": 5 },
+      { "score": 4, "minCount": 4 },
+      { "score": 3, "minCount": 3 },
+      { "score": 2, "minCount": 2 },
+      { "score": 1, "minCount": 1 }
+    ],
+    "minEvidenceTypesForScore4": 2
+  },
+  "R06_category_demand": {
+    "description": "Product type/tags mapped to a curated category in config/category-demand.json",
+    "demandBands": [
+      { "score": 5, "minRank": 1 },
+      { "score": 4, "minRank": 2 },
+      { "score": 3, "minRank": 4 },
+      { "score": 2, "minRank": 8 },
+      { "score": 1, "minRank": 16 }
+    ]
+  },
+  "R07_marketing_activity": {
+    "description": "Count of verified on-site marketing signals plus recent news/blog activity",
+    "signalPoints": {
+      "promo_banner": 1,
+      "discount_code": 1,
+      "blog_or_press_page": 1,
+      "newsletter_form": 1,
+      "meta_pixel": 1,
+      "google_tag": 1,
+      "klaviyo": 1,
+      "google_ads_link": 1,
+      "meta_ad_library_link": 1
+    },
+    "signalBands": [
+      { "score": 5, "minSignals": 6 },
+      { "score": 4, "minSignals": 4 },
+      { "score": 3, "minSignals": 3 },
+      { "score": 2, "minSignals": 2 },
+      { "score": 1, "minSignals": 1 }
+    ],
+    "recencyBump": { "maxScore": 5, "recentDays": 90, "bump": 1 },
+    "maxScore": 5
+  },
+  "R08_quick_commerce": {
+    "description": "Verifiable listings on quick-commerce/marketplaces. Blocked platforms excluded from denominator.",
+    "bands": [
+      { "score": 5, "minCount": 4 },
+      { "score": 4, "minCount": 3 },
+      { "score": 3, "minCount": 2 },
+      { "score": 2, "minCount": 1 }
+    ]
+  },
+  "R09_packaging": {
+    "description": "Objective imaging signals only (product image count + packshot presence). Not machine-judgeable beyond this cap; analyst judgement is required to go higher.",
+    "cap": 3,
+    "bands": [
+      { "score": 3, "minImagesPerProduct": 3, "requirePackshot": true },
+      { "score": 2, "minImagesPerProduct": 2 },
+      { "score": 1, "minImagesPerProduct": 1 }
+    ],
+    "minProducts": 2
+  },
+  "R10_reviews": {
+    "description": "AggregateRating value and count from JSON-LD or static review widgets",
+    "valueBands": [
+      { "score": 5, "min": 4.5 },
+      { "score": 4, "min": 4.2 },
+      { "score": 3, "min": 3.8 },
+      { "score": 2, "min": 3.2 },
+      { "score": 1, "min": 0 }
+    ],
+    "countCap": [
+      { "score": 5, "minCount": 200 },
+      { "score": 3, "minCount": 20 }
+    ],
+    "smallSampleCap": 3
+  },
+  "R11_visibility_investment": {
+    "description": "null unless documented trade marketing / sampling / retail media / ad spend evidence",
+    "band": { "score": 4, "minSignals": 2 },
+    "singleSignalScore": 2,
+    "knownSignals": [
+      "trade_program",
+      "sampling_campaign",
+      "retail_media_campaign",
+      "ad_library_spend",
+      "in_store_promotion"
+    ]
+  },
+  "R12_offline_whitespace": {
+    "description": "HIGHER = LESS existing offline presence (whitespace). Direction per reference sheet.",
+    "noPresenceScore": 4,
+    "presenceBands": [
+      { "score": 1, "minStores": 100 },
+      { "score": 2, "minStores": 25 },
+      { "score": 3, "minStores": 5 }
+    ]
+  },
+  "R13_retailer_fit": {
+    "description": "Brand category/price matched against retailer category needs",
+    "bands": [
+      { "score": 5, "minMatches": 3 },
+      { "score": 4, "minMatches": 2 },
+      { "score": 3, "minMatches": 1 }
+    ],
+    "requirePriceInBand": true
+  },
+  "R14_social": {
+    "description": "Followers, post count and recency from public markup. Engagement only if publicly parseable.",
+    "followerBands": [
+      { "score": 5, "min": 1000000 },
+      { "score": 4, "min": 200000 },
+      { "score": 3, "min": 50000 },
+      { "score": 2, "min": 10000 },
+      { "score": 1, "min": 1000 }
+    ],
+    "postCountBonus": { "maxScore": 5, "minPosts": 200, "bonus": 1 },
+    "recencyBonus": { "maxScore": 5, "recentDays": 30, "bonus": 1 },
+    "engagementBands": [
+      { "score": 5, "minRatePct": 5 },
+      { "score": 4, "minRatePct": 3 },
+      { "score": 3, "minRatePct": 1 },
+      { "score": 2, "minRatePct": 0.3 }
+    ]
+  },
+  "R15_sell_through": {
+    "description": "Only cited bestseller rank with a number, or analyst-uploaded retailer feedback.",
+    "rankBands": [
+      { "score": 5, "maxRank": 10 },
+      { "score": 4, "maxRank": 100 },
+      { "score": 3, "maxRank": 1000 },
+      { "score": 2, "maxRank": 10000 }
+    ],
+    "maxAgeDays": 180
+  }
+}
