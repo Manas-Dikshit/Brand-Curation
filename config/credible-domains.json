@@ -1,0 +1,14 @@
+{
+  "_comment": "Allow-list for follow-up fetches from web discovery. Only these domains get fetched; everything else stays a title+URL snippet.",
+  "version": "1.0.0",
+  "domains": [
+    "wikipedia.org", "wikidata.org", "reuters.com", "bloomberg.com", "economictimes.indiatimes.com",
+    "timesofindia.indiatimes.com", "business-standard.com", "livemint.com", "moneycontrol.com",
+    "financialexpress.com", "thehindubusinessline.com", "ndtv.com", "thehindu.com", "forbesindia.com",
+    "inc42.com", "entrackr.com", "yourstory.com", "techcrunch.com", "yourcookingmood.com",
+    "masterclass.com", "papercutmag.com", "vogue.in", "yourstory.com", "amazon.in",
+    "nykaa.com", "flipkart.com", "tracxn.com", "crunchbase.com", "zaubacorp.com", "tofler.in",
+    "retailnet.com", "businessline.in", "retailfocus.in", "imagesretail.com", "thehindu.com"
+  ],
+  "blockedByRobots": ["instagram.com", "facebook.com", "x.com", "twitter.com"]
+}
