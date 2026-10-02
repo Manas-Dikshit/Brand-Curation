@@ -1,0 +1,16 @@
+{
+  "_comment": "Curated category demand ranks. Rank 1 = strongest demand signal. Edit freely; every category must carry a sourceUrl. Matched against Shopify product_type and tags.",
+  "version": "1.0.0",
+  "categories": [
+    { "key": "skincare", "rank": 2, "sourceUrl": "https://www.fortunebusinessinsights.com/india-skincare-market-102417", "terms": ["skincare", "skin care", "face care", "facial", "serum", "moisturizer", "cleanser", "sunscreen"] },
+    { "key": "personal-care", "rank": 3, "sourceUrl": "https://www.mordorintelligence.com/industry-reports/india-personal-care-products-market", "terms": ["personal care", "hair care", "shampoo", "conditioner", "body care", "soap", "deodorant"] },
+    { "key": "supplements", "rank": 4, "sourceUrl": "https://www.grandviewresearch.com/industry-analysis/india-dietary-supplements-market", "terms": ["supplement", "nutrition", "protein", "vitamin", "multivitamin", "probiotic", "ayurvedic"] },
+    { "key": "haircare-devices", "rank": 6, "sourceUrl": "https://www.researchandmarkets.com/reports/india-hair-care-market", "terms": ["hair dryer", "hair straightener", "hair iron", "trimmer", "grooming"] },
+    { "key": "fragrance", "rank": 7, "sourceUrl": "https://www.mordorintelligence.com/industry-reports/india-perfume-market", "terms": ["perfume", "fragrance", "eau de parfum", "attar", "deodorant spray"] },
+    { "key": "food-snacks", "rank": 3, "sourceUrl": "https://www.fortunebusinessinsights.com/india-snacks-market-106923", "terms": ["snack", "chips", "biscuit", "chocolate", "nuts", "dry fruit", "makhana"] },
+    { "key": "beverages", "rank": 5, "sourceUrl": "https://www.researchandmarkets.com/reports/india-beverages-market", "terms": ["beverage", "drink", "juice", "tea", "coffee", "soda", "energy drink"] },
+    { "key": "home-care", "rank": 8, "sourceUrl": "https://www.grandviewresearch.com/industry-analysis/india-home-care-market", "terms": ["cleaning", "detergent", "home care", "floor cleaner", "dishwash", "tissue"] },
+    { "key": "baby-care", "rank": 9, "sourceUrl": "https://www.researchandmarkets.com/reports/india-baby-care-market", "terms": ["baby", "infant", "diaper", "toddler", "maternity"] },
+    { "key": "womens-wellness", "rank": 10, "sourceUrl": "https://www.fortunebusinessinsights.com/india-women-health-and-wellness-market-107455", "terms": ["women", "feminine hygiene", "intimate care", "s sanitary"] }
+  ]
+}
