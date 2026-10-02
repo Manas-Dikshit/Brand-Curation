@@ -1,0 +1,39 @@
+{
+  "products": [
+    {
+      "title": "Niacinamide 10% Serum",
+      "handle": "niacinamide-serum",
+      "product_type": "Serum",
+      "tags": ["skincare", "oily-skin", "fragrance-free"],
+      "images": [{ "src": "a.jpg" }, { "src": "b.jpg" }, { "src": "c.jpg" }, { "src": "d.jpg" }],
+      "variants": [
+        { "price": "449.00", "compare_at_price": "899.00", "available": true },
+        { "price": "449.00", "compare_at_price": "899.00", "available": true }
+      ]
+    },
+    {
+      "title": "Vitamin C Face Cream",
+      "handle": "vitamin-c-face-cream",
+      "product_type": "Moisturizer",
+      "tags": ["skincare", "brightening"],
+      "images": [{ "src": "c1.jpg" }, { "src": "c2.jpg" }, { "src": "c3.jpg" }],
+      "variants": [{ "price": "599.00", "compare_at_price": null, "available": true }]
+    },
+    {
+      "title": "Gentle Gel Cleanser",
+      "handle": "gel-cleanser",
+      "product_type": "Cleanser",
+      "tags": ["skincare"],
+      "images": [{ "src": "g1.jpg" }, { "src": "g2.jpg" }, { "src": "g3.jpg" }],
+      "variants": [{ "price": "349.00", "compare_at_price": "499.00", "available": true }]
+    },
+    {
+      "title": "Travel Kit",
+      "handle": "travel-kit",
+      "product_type": "Gift Set",
+      "tags": ["gift"],
+      "images": [{ "src": "t1.jpg" }],
+      "variants": [{ "price": "2499.00", "compare_at_price": "2999.00", "available": false }]
+    }
+  ]
+}
