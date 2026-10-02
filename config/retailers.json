@@ -1,0 +1,14 @@
+{
+  "_comment": "Retail partners Newtail distributes through. matchTerms are matched against page text / product types. categories are the retailer's stated category needs.",
+  "version": "1.0.0",
+  "retailers": [
+    { "name": "Apollo Pharmacy", "url": "https://www.apollopharmacy.in", "categories": ["personal-care", "supplements", "baby-care", "home-care"], "priceMin": 50, "priceMax": 1500 },
+    { "name": "Nature's Basket", "url": "https://www.naturesbasket.com", "categories": ["food-snacks", "supplements", "beverages", "home-care"], "priceMin": 100, "priceMax": 3000 },
+    { "name": "Health & Glow", "url": "https://www.healthandglow.com", "categories": ["skincare", "supplements", "fragrance"], "priceMin": 150, "priceMax": 5000 },
+    { "name": "Westside", "url": "https://www.westside.com", "categories": ["fragrance", "personal-care"], "priceMin": 300, "priceMax": 8000 },
+    { "name": "Nykaa", "url": "https://www.nykaa.com", "categories": ["skincare", "fragrance", "womens-wellness"], "priceMin": 200, "priceMax": 6000 },
+    { "name": "Reliance Smart", "url": "https://www.reliancesmart.in", "categories": ["food-snacks", "beverages", "home-care", "personal-care"], "priceMin": 30, "priceMax": 2000 },
+    { "name": "Croma", "url": "https://www.croma.com", "categories": ["haircare-devices", "personal-care"], "priceMin": 500, "priceMax": 50000 },
+    { "name": "Zivame", "url": "https://www.zivame.com", "categories": ["fragrance", "womens-wellness"], "priceMin": 200, "priceMax": 4000 }
+  ]
+}
