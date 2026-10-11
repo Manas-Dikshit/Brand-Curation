@@ -35,18 +35,37 @@ function unwrap(href: string): string {
   } catch { return href; }
 }
 
+/** Drop duplicate results: same host+path (ignoring hash and trailing slash) wins by first occurrence. */
+export function dedupeHits(hits: SearchHit[]): SearchHit[] {
+  const seen = new Set<string>();
+  const out: SearchHit[] = [];
+  for (const h of hits) {
+    let k = h.url;
+    try {
+      const u = new URL(h.url);
+      u.hash = "";
+      const path = u.pathname.replace(/\/+$/, "");
+      k = `${u.hostname.replace(/^www\./, "")}${u.search}${path}`.toLowerCase();
+    } catch { /* keep raw */ }
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(h);
+  }
+  return out;
+}
+
 /** DuckDuckGo HTML endpoint: titles + URLs only. No summarisation, no LLM. */
-export async function duckduckgo(query: string, limit = 8): Promise<{ hits: SearchHit[]; evidence: any[] }> {
+export async function duckduckgo(query: string, limit = 10): Promise<{ hits: SearchHit[]; evidence: any[] }> {
   const r = await fetchPage(DDG + encodeURIComponent(query));
   const evidence: any[] = [];
   if (!r.ok || !r.body) return { hits: [], evidence };
   const $ = cheerio.load(r.body);
   const hits: SearchHit[] = [];
-  $(".result, .web-result").each((_, el) => {
+  $(".result, .web-result, .results_links li.result").each((_, el) => {
     if (hits.length >= limit) return;
-    const a = $(el).find("a.result__a").first();
+    const a = $(el).find("a.result__a").first().length ? $(el).find("a.result__a").first() : $(el).find("a[href]").first();
     const href = a.attr("href");
-    if (!href) return;
+    if (!href || /\/y\.js|duckduckgo\.com/i.test(href)) return;
     const url = unwrap(href);
     const title = a.text().trim();
     if (!title || !/^https?:/i.test(url)) return;
@@ -56,7 +75,7 @@ export async function duckduckgo(query: string, limit = 8): Promise<{ hits: Sear
     hits.push({ title, url, source: host, date: null, snippet });
   });
   evidence.push(ev(`DuckDuckGo results for "${query}": ${hits.length} titles (no summarisation)`, r.finalUrl, r.fetchedAt));
-  return { hits, evidence };
+  return { hits: dedupeHits(hits), evidence };
 }
 
 /** Google News RSS for recency + source. */
