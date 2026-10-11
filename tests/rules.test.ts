@@ -145,6 +145,20 @@ describe("R06 in-demand category", () => {
     expect(out.score).toBeNull();
     expect(out.missing).toMatch(/category-demand\.json/);
   });
+
+  test("matches product titles and JSON-LD product names, not just types/tags", () => {
+    const out = run(R("In-demand category"), brand(null, shopify([product({ title: "Millet muesli bites", productType: "", tags: [] })])), byName["In-demand category"]);
+    expect(out.score).toBeGreaterThan(0);
+    expect(out.evidence).toMatch(/health-foods/);
+    const ld = run(R("In-demand category"), brand(null, { jsonld: { organization: null, products: [{ name: "Matte Lipstick", price: null, url: "https://a.example/p", rating: null }], rating: null, pagesParsed: 0, reason: null } }), byName["In-demand category"]);
+    expect(ld.score).toBeGreaterThan(0);
+    expect(ld.evidence).toMatch(/beauty/);
+  });
+
+  test("lowest demand rank wins when several categories match", () => {
+    const out = run(R("In-demand category"), brand(null, shopify([product({ productType: "Serum", tags: ["serum", "detergent"] })])), byName["In-demand category"]);
+    expect(out.evidence).toMatch(/Mapped to curated category "skincare"/);
+  });
 });
 
 describe("R07 marketing activity", () => {
