@@ -11,6 +11,6 @@
     { "key": "beverages", "rank": 5, "sourceUrl": "https://www.researchandmarkets.com/reports/india-beverages-market", "terms": ["beverage", "drink", "juice", "tea", "coffee", "soda", "energy drink"] },
     { "key": "home-care", "rank": 8, "sourceUrl": "https://www.grandviewresearch.com/industry-analysis/india-home-care-market", "terms": ["cleaning", "detergent", "home care", "floor cleaner", "dishwash", "tissue"] },
     { "key": "baby-care", "rank": 9, "sourceUrl": "https://www.researchandmarkets.com/reports/india-baby-care-market", "terms": ["baby", "infant", "diaper", "toddler", "maternity"] },
-    { "key": "womens-wellness", "rank": 10, "sourceUrl": "https://www.fortunebusinessinsights.com/india-women-health-and-wellness-market-107455", "terms": ["women", "feminine hygiene", "intimate care", "s sanitary"] }
+    { "key": "womens-wellness", "rank": 10, "sourceUrl": "https://www.fortunebusinessinsights.com/india-women-health-and-wellness-market-107455", "terms": ["women", "feminine hygiene", "intimate care", "sanitary"] }
   ]
 }

@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const ref = await ensureReference();
+  const ref = await ensureReference().catch(() => null);
+  if (!ref) return Response.json({ error: "Reference validation failed" }, { status: 422 });
   const form = await req.formData();
   const file = form.get("file") as File | null;
   const jobId = String(form.get("jobId") ?? "");

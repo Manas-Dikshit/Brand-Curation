@@ -29,7 +29,8 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!job) return Response.json({ error: "Unknown job" }, { status: 404 });
   const body = await req.json().catch(() => ({}) as any);
 
-  const ref = await ensureReference();
+  const ref = await ensureReference().catch(() => null);
+  if (!ref) return Response.json({ error: "Reference validation failed" }, { status: 422 });
 
   if (body.action === "override") {
     const overrides = body.overrides && typeof body.overrides === "object" ? body.overrides : {};
@@ -40,7 +41,6 @@ export async function POST(req: Request, ctx: Ctx) {
   const states: BrandState[] = body.action === "retry-failed"
     ? ["failed"]
     : Array.isArray(body.states) ? body.states : ["queued", "failed"];
-  const ref = await ensureReference();
   runJob(job, ref, states).catch(e => { job.errors["*"] = (e as Error).message; });
   return Response.json({ jobId: job.id, ...jobProgress(job), started: states }, { status: 202 });
 }
