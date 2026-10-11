@@ -118,12 +118,14 @@ export async function collectSearch(brand: string): Promise<CollectorResult<Sear
   return safe<SearchFacts>("search", async (): Promise<CollectorOutput<SearchFacts>> => {
     const evidence: any[] = [];
     const notes: string[] = [];
-    const [web, news] = await Promise.all([
-      duckduckgo(`"${brand}" revenue OR funding OR "annual sales"`),
+    const [money, presence, news] = await Promise.all([
+      duckduckgo(`"${brand}" revenue OR funding OR "annual sales" OR valuation`),
+      duckduckgo(`"${brand}" official website OR launched OR acquired`),
       googleNews(`"${brand}"`),
     ]);
-    evidence.push(...web.evidence, ...news.evidence);
-    if (!web.hits.length) notes.push("DuckDuckGo returned no parseable results for the revenue/funding query.");
+    const web = dedupeHits([...money.hits, ...presence.hits]);
+    evidence.push(...money.evidence, ...presence.evidence, ...news.evidence);
+    if (!money.hits.length && !presence.hits.length) notes.push("DuckDuckGo returned no parseable results for the money/presence queries.");
     if (!news.hits.length) notes.push("Google News RSS returned no items for this brand.");
     return { status: web.hits.length || news.hits.length ? "ok" : "partial",
       facts: { web: web.hits, news: news.hits }, evidence, notes };
