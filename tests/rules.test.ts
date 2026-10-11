@@ -150,7 +150,7 @@ describe("R06 in-demand category", () => {
     const out = run(R("In-demand category"), brand(null, shopify([product({ title: "Millet muesli bites", productType: "", tags: [] })])), byName["In-demand category"]);
     expect(out.score).toBeGreaterThan(0);
     expect(out.evidence).toMatch(/health-foods/);
-    const ld = run(R("In-demand category"), brand(null, { jsonld: { organization: null, products: [{ name: "Matte Lipstick", price: null, url: "https://a.example/p", rating: null }], rating: null, pagesParsed: 0, reason: null } }), byName["In-demand category"]);
+    const ld = run(R("In-demand category"), brand(null, { jsonld: { organization: null, products: [{ name: "Matte Lipstick", price: null, currency: null, availability: null, url: "https://a.example/p", rating: null, images: 1 }], rating: null, pagesParsed: 0, reason: null } }), byName["In-demand category"]);
     expect(ld.score).toBeGreaterThan(0);
     expect(ld.evidence).toMatch(/beauty/);
   });
