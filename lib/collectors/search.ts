@@ -97,7 +97,7 @@ export async function googleNews(query: string, limit = 10): Promise<{ hits: Sea
     hits.push({ title, url: link, source, date: pubDate, snippet: null });
   }
   evidence.push(ev(`Google News RSS for "${query}": ${hits.length} items`, url, r.fetchedAt));
-  return { hits, evidence };
+  return { hits: dedupeHits(hits), evidence };
 }
 
 /** Full-text read of allow-listed domains only, used to find cited money figures. */
