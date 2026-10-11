@@ -127,7 +127,7 @@ export async function collectSearch(brand: string): Promise<CollectorResult<Sear
     evidence.push(...money.evidence, ...presence.evidence, ...news.evidence);
     if (!money.hits.length && !presence.hits.length) notes.push("DuckDuckGo returned no parseable results for the money/presence queries.");
     if (!news.hits.length) notes.push("Google News RSS returned no items for this brand.");
-    return { status: web.hits.length || news.hits.length ? "ok" : "partial",
-      facts: { web: web.hits, news: news.hits }, evidence, notes };
+    return { status: web.length || news.hits.length ? "ok" : "partial",
+      facts: { web, news: news.hits }, evidence, notes };
   });
 }

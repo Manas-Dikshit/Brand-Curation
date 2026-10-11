@@ -5,7 +5,10 @@ import { ev, safe, type CollectorOutput, type CollectorResult, type SiteFacts } 
 import type { BrandInput } from "../types";
 
 const MATCH_THRESHOLD = 0.8;
-const TLDS = ["com", "in", "co.in", "shop", "net", "io"];
+const TLDS = ["com", "in", "co.in", "co", "shop", "net", "io", "store"];
+// Priority order of probe batches: hits found in an earlier batch win.
+const PROBE_BATCH = 6;
+const PROBE_CAP = 40;
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
@@ -75,20 +78,30 @@ export async function resolveSite(input: BrandInput): Promise<CollectorResult<Si
       notes.push(`Analyst-supplied website ${withScheme} did not validate for "${input.brand}"${res ? ` (best match ${res.score.toFixed(2)} < ${MATCH_THRESHOLD})` : ""}; falling back to guessing.`);
     }
 
-    // (b) guess candidates from the brand name
+    // (b) guess candidates from the brand name, probing a few at a time
     const base = slugify(input.brand);
     const firstWord = input.brand.trim().split(/\s+/)[0];
-    const bases = [base, ...(slugify(firstWord) !== base ? [slugify(firstWord)] : [])];
+    const hyphenated = input.brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const bases = [...new Set([base, slugify(firstWord), hyphenated])].filter(Boolean);
     const candidates: string[] = [];
+    const STOP = /^(the|my|get|shop|try|buy|is|a|an|best)$/;
     for (const b of bases) {
-      if (!b) continue;
-      for (const t of TLDS) candidates.push(`https://www.${b}.${t}`);
-      candidates.push(`https://get${b}.com`, `https://shop${b}.in`);
+      if (!b || STOP.test(b)) continue;
+      for (const t of TLDS) {
+        candidates.push(`https://www.${b}.${t}`);
+        candidates.push(`https://${b}.${t}`);
+      }
+      candidates.push(`https://get${b}.com`, `https://shop${b}.com`, `https://try${b}.com`);
     }
 
-    for (const url of candidates) {
-      const res = await check(url);
-      if (res?.ok) {
+    const toProbe = candidates.slice(0, PROBE_CAP);
+    for (let i = 0; i < toProbe.length; i += PROBE_BATCH) {
+      const batch = toProbe.slice(i, i + PROBE_BATCH);
+      const results = await Promise.all(batch.map(url => check(url)));
+      const win = results.findIndex(r => r?.ok);
+      if (win >= 0) {
+        const url = batch[win];
+        const res = results[win]!;
         return {
           status: "ok",
           facts: {
