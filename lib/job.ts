@@ -52,6 +52,11 @@ export function getJob(id: string): Job | null {
   if (cached) return cached;
   try {
     const job = JSON.parse(fs.readFileSync(file(id), "utf8")) as Job;
+    // a job reloaded from disk has no live worker: any brand left "running" by a
+    // crashed process is requeued so a resume actually resumes instead of hanging.
+    for (const b of Object.keys(job.brands)) {
+      if (job.brands[b] === "running") job.brands[b] = "queued";
+    }
     jobs.set(id, job);
     return job;
   } catch {

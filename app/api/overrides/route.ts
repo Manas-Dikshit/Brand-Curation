@@ -1,6 +1,6 @@
 import { ensureReference } from "@/lib/engine";
 import { applyOverrides, getJob } from "@/lib/job";
-import { ANALYSIS_COLUMNS, parseEvidenceWorkbook, type ImportError } from "@/lib/overrides";
+import { ANALYSIS_COLUMNS, MAX_UPLOAD_BYTES, parseEvidenceWorkbook, type ImportError } from "@/lib/overrides";
 import type { CriterionResult } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
   if (!file) return Response.json({ error: "No file" }, { status: 400 });
   if (!/\.xlsx$/i.test(file.name)) return Response.json({ error: "Upload an .xlsx file" }, { status: 400 });
+  if (file.size > MAX_UPLOAD_BYTES) return Response.json({ error: "File is larger than 10 MB" }, { status: 413 });
 
   let parsed: { overrides: Map<string, CriterionResult[]>; errors: ImportError[]; imported: number };
   try {
