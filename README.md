@@ -8,7 +8,7 @@ paid services, no telemetry. Everything is public HTTP (robots-aware) plus deter
 ```bash
 npm i
 npm run dev      # http://localhost:3000
-npm test         # 60 offline tests, no network
+npm test         # offline tests, no network
 npm run build
 ```
 
