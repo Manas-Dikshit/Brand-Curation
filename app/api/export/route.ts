@@ -13,10 +13,11 @@ export async function POST(req: Request) {
   if (!ref.ok) return Response.json({ error: "Reference validation failed", issues: ref.issues }, { status: 422 });
 
   const body = await req.json().catch(() => null) as
-    | { evaluations?: Evaluation[]; duplicates?: string[]; importErrors?: ImportError[] }
+    | { evaluations?: unknown; duplicates?: string[]; importErrors?: ImportError[] }
     | null;
-  const evaluations = body?.evaluations ?? [];
-  if (!Array.isArray(evaluations) || !evaluations.length) {
+  const evaluations = (Array.isArray(body?.evaluations) ? body!.evaluations : [])
+    .filter((e): e is Evaluation => !!e && typeof e === "object" && Array.isArray((e as Evaluation).results));
+  if (!evaluations.length) {
     return Response.json({ error: "No evaluations supplied" }, { status: 400 });
   }
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   // can never reach the workbook, and a client total can never be trusted.
   const normalised = evaluations.map(e => ({
     ...e,
-    ...summarize(ref.criteria, enforceEvidenceRule(e.results ?? [])),
+    ...summarize(ref.criteria, enforceEvidenceRule(e.results)),
   }));
   const buf = await buildWorkbook(ref, normalised, {
     duplicates: body?.duplicates ?? [],

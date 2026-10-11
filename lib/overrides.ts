@@ -90,7 +90,8 @@ export async function parseBrandWorkbook(buf: ArrayBuffer): Promise<{
     if (!raw) { if (i > 1) empty.push(`Row ${i}`); return; }
     if (!headerChecked && i === 1) {
       headerChecked = true;
-      if (/^brand/i.test(raw) && !/https?:|@/.test(raw)) return; // header row
+      // exact header word only: a first brand like "Brandy Co" must NOT be swallowed
+      if (/^brands?(\s*name)?s?$/i.test(raw)) return;
     }
     const key = raw.toLowerCase().replace(/[^a-z0-9]+/g, "");
     if (seen.has(key)) { duplicates.push(raw); return; }
@@ -101,6 +102,25 @@ export async function parseBrandWorkbook(buf: ArrayBuffer): Promise<{
   });
 
   return { brands, duplicates, empty };
+}
+
+/** Max upload size accepted by the .xlsx routes (a malformed payload should not OOM the server). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** Trust-boundary validator: the jobs API must never 500 on a hand-crafted payload. */
+export function normalizeBrands(raw: unknown): BrandInput[] {
+  if (!Array.isArray(raw)) return [];
+  const out: BrandInput[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const b = item as Record<string, unknown>;
+    const name = typeof b.brand === "string" ? b.brand.trim().slice(0, 200) : "";
+    if (!name) continue;
+    const website = typeof b.website === "string" ? b.website.trim() || null : null;
+    const instagram = typeof b.instagram === "string" ? b.instagram.trim() || null : null;
+    out.push({ brand: name, website, instagram });
+  }
+  return out;
 }
 
 export function pillarOf(name: string) {

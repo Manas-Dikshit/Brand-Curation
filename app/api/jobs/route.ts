@@ -1,6 +1,7 @@
 import { ensureReference } from "@/lib/engine";
 import { createJob, jobProgress, runJob, type BrandState } from "@/lib/job";
-import type { BrandInput, CriterionResult } from "@/lib/types";
+import { normalizeBrands } from "@/lib/overrides";
+import type { CriterionResult } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,13 +13,14 @@ export async function POST(req: Request) {
   if (!ref) return Response.json({ error: "Reference validation failed" }, { status: 422 });
 
   const body = await req.json().catch(() => null) as
-    | { brands?: BrandInput[]; overrides?: Record<string, CriterionResult[]> }
+    | { brands?: unknown; overrides?: Record<string, CriterionResult[]> }
     | null;
-  const brands = (body?.brands ?? []).filter(b => b?.brand?.trim());
+  const brands = normalizeBrands(body?.brands);
   if (!brands.length) return Response.json({ error: "No brands supplied" }, { status: 400 });
   if (brands.length > 500) return Response.json({ error: "Cap is 500 brands per run" }, { status: 400 });
 
-  const job = createJob(brands, body?.overrides ?? {});
+  const overrides = body?.overrides && typeof body.overrides === "object" ? body.overrides : {};
+  const job = createJob(brands, overrides);
   // fire and forget: the client follows /api/jobs/<id>/stream
   runJob(job, ref, ["queued"]).catch(e => {
     job.errors["*"] = (e as Error).message;

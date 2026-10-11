@@ -6,9 +6,10 @@ export const UA =
 export const TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS ?? 8000);
 export const MAX_BYTES = 2 * 1024 * 1024;
 export const RETRIES = 2;
-export const PER_DOMAIN_GAP_MS = Number(process.env.PER_DOMAIN_GAP_MS ?? 1000);
+/** Read at call time (not import time) so the offline demo can zero the pacing. */
+const perDomainGapMs = () => Number(process.env.PER_DOMAIN_GAP_MS ?? 1000);
 /** Global token bucket: one request per this many ms across every domain (~10 req/s). */
-export const GLOBAL_GAP_MS = Number(process.env.GLOBAL_REQUEST_GAP_MS ?? 100);
+const globalGapMs = () => Number(process.env.GLOBAL_REQUEST_GAP_MS ?? 100);
 
 export type Blocked =
   | "robots" | "timeout" | "too-large" | "network" | "http-error"
@@ -49,10 +50,14 @@ let nextGlobalSlot = 0;
 function domainOf(u: string) {
   try { return new URL(u).hostname.toLowerCase(); } catch { return ""; }
 }
+/** Second-level suffixes that are themselves part of the public suffix (shop.example.co.in is one site). */
+const TWO_PART_SUFFIXES = new Set(["co.in", "org.in", "net.in", "gov.in", "ac.in", "co.uk", "org.uk", "com.au", "co.nz", "co.jp"]);
 function registrable(u: string) {
   const h = domainOf(u);
   const p = h.split(".");
-  return p.length <= 2 ? h : p.slice(-2).join(".");
+  if (p.length <= 2) return h;
+  const last2 = p.slice(-2).join(".");
+  return TWO_PART_SUFFIXES.has(last2) ? p.slice(-3).join(".") : last2;
 }
 
 /** Serialises + spaces out requests per host, and passes every request through a global bucket. */
@@ -64,11 +69,12 @@ export async function politeSlot(url: string): Promise<() => void> {
   inflight.set(host, held);
   await prev.catch(() => {});
   const now = Date.now();
+  const perDomain = perDomainGapMs();
   const slot = Math.max(nextGlobalSlot, now);
-  nextGlobalSlot = slot + GLOBAL_GAP_MS;
+  nextGlobalSlot = slot + globalGapMs();
   if (slot > now) await sleep(slot - now);
   const since = now - (lastHit.get(host) ?? 0);
-  if (since < PER_DOMAIN_GAP_MS) await sleep(PER_DOMAIN_GAP_MS - since);
+  if (since < perDomain) await sleep(perDomain - since);
   lastHit.set(host, Date.now());
   return () => release();
 }

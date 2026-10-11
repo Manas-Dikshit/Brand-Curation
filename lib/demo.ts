@@ -44,14 +44,25 @@ export function demoFetch(input: unknown): Promise<Response> {
   }));
 }
 
-/** Runs `fn` with the demo router installed, then restores the real fetch. */
+/** Runs `fn` with the demo router installed and pacing off, then restores both. */
 export async function withDemoFetch<T>(fn: () => Promise<T>): Promise<T> {
   const real = globalThis.fetch;
+  const prevPer = process.env.PER_DOMAIN_GAP_MS;
+  const prevGlobal = process.env.GLOBAL_REQUEST_GAP_MS;
   globalThis.fetch = demoFetch as unknown as typeof fetch;
-  process.env.PER_DOMAIN_GAP_MS ??= "0";
+  // fixtures are in-process: no network to be polite to. Gap env is read per-call.
+  process.env.PER_DOMAIN_GAP_MS = "0";
+  process.env.GLOBAL_REQUEST_GAP_MS = "0";
   try {
     return await fn();
   } finally {
     globalThis.fetch = real;
+    restoreEnv("PER_DOMAIN_GAP_MS", prevPer);
+    restoreEnv("GLOBAL_REQUEST_GAP_MS", prevGlobal);
   }
+}
+
+function restoreEnv(key: string, value: string | undefined) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
 }
