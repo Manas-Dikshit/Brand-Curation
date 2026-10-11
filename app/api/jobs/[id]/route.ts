@@ -29,13 +29,17 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!job) return Response.json({ error: "Unknown job" }, { status: 404 });
   const body = await req.json().catch(() => ({}) as any);
 
+  const ref = await ensureReference();
+
   if (body.action === "override") {
-    const ref = await ensureReference();
-    applyOverrides(job, ref, (body.overrides ?? {}) as Record<string, CriterionResult[]>);
+    const overrides = body.overrides && typeof body.overrides === "object" ? body.overrides : {};
+    applyOverrides(job, ref, overrides as Record<string, CriterionResult[]>);
     return Response.json({ jobId: job.id, ...jobProgress(job), applied: true });
   }
 
-  const states: BrandState[] = body.action === "retry-failed" ? ["failed"] : (body.states ?? ["queued", "failed"]);
+  const states: BrandState[] = body.action === "retry-failed"
+    ? ["failed"]
+    : Array.isArray(body.states) ? body.states : ["queued", "failed"];
   const ref = await ensureReference();
   runJob(job, ref, states).catch(e => { job.errors["*"] = (e as Error).message; });
   return Response.json({ jobId: job.id, ...jobProgress(job), started: states }, { status: 202 });

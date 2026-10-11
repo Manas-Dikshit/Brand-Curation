@@ -98,8 +98,21 @@ export function applyOverrides(job: Job, ref: RefReport, overrides: Record<strin
   persist(job);
 }
 
+/** One pool per job: a double-click on resume/retry must not start a second run. */
+const active = new Set<string>();
+
 /** Bounded pool over the selected states. Already-done brands are skipped, so a crash resumes. */
 export async function runJob(job: Job, ref: RefReport, only: BrandState[] = ["queued", "failed"]) {
+  if (active.has(job.id)) return job;
+  active.add(job.id);
+  try {
+    return await runJobInner(job, ref, only);
+  } finally {
+    active.delete(job.id);
+  }
+}
+
+async function runJobInner(job: Job, ref: RefReport, only: BrandState[]) {
   job.finished = false;
   const byBrand = new Map(job.inputs.map(i => [i.brand, i]));
   const queue = Object.entries(job.brands)
