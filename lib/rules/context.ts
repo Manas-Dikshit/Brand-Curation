@@ -72,24 +72,32 @@ export function bestRating(facts: BrandFacts): { value: number; count: number; u
   return best;
 }
 
-/** Distinct category keys implied by the product feed's types and tags. */
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * The category list is static, so compile its word-boundary matchers once at
+ * module load instead of rebuilding a RegExp per term on every brand.
+ */
+const CATEGORY_MATCHERS = CATEGORIES.categories.map(c => ({
+  key: c.key, rank: c.rank, sourceUrl: c.sourceUrl,
+  matchers: c.terms.map(term => ({ term, re: new RegExp(`\\b${escapeRe(term)}\\b`, "i") })),
+}));
+
+/** Distinct category keys implied by product types, tags, titles and JSON-LD names. */
 export function categoriesOf(facts: BrandFacts): { key: string; rank: number; sourceUrl: string; term: string }[] {
   const hay: string[] = [];
   for (const p of facts.shopify.products) {
+    if (p.title) hay.push(p.title);
     if (p.productType) hay.push(p.productType);
     hay.push(...p.tags);
   }
-  const blob = hay.join(" | ").toLowerCase();
+  for (const p of facts.jsonld.products) if (p.name) hay.push(p.name);
+  const blob = hay.join(" | ");
   if (!blob.trim()) return [];
   const found = new Map<string, { key: string; rank: number; sourceUrl: string; term: string }>();
-  for (const c of CATEGORIES.categories) {
-    for (const term of c.terms) {
-      if (new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(blob)) {
-        const prev = found.get(c.key);
-        if (!prev || c.rank < prev.rank) found.set(c.key, { key: c.key, rank: c.rank, sourceUrl: c.sourceUrl, term });
-        break;
-      }
-    }
+  for (const c of CATEGORY_MATCHERS) {
+    const hit = c.matchers.find(m => m.re.test(blob));
+    if (hit) found.set(c.key, { key: c.key, rank: c.rank, sourceUrl: c.sourceUrl, term: hit.term });
   }
   return [...found.values()].sort((a, b) => a.rank - b.rank);
 }
