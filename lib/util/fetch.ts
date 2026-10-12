@@ -113,7 +113,7 @@ function parseRobots(txt: string) {
   return me ? me.rules : [];
 }
 
-function loadRobots(origin: string, timeoutMs = TIMEOUT_MS) {
+function loadRobots(origin: string, timeoutMs = 2500) {
   let p = robots.get(origin);
   if (!p) {
     p = (async () => {
