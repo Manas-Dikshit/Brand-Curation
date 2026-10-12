@@ -5,7 +5,7 @@ import path from "path";
 const ROOT = path.join(process.cwd(), ".cache");
 
 export const HTTP_TTL_MS = Number(process.env.CACHE_TTL_DAYS ?? 7) * 24 * 60 * 60 * 1000;
-export const FACTS_SCHEMA_VERSION = 3;
+export const FACTS_SCHEMA_VERSION = 4;
 
 function fileFor(kind: "http" | "facts", key: string) {
   const dir = kind === "http" ? path.join(ROOT, "http") : path.join(ROOT, "facts", String(FACTS_SCHEMA_VERSION));

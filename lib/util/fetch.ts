@@ -4,7 +4,7 @@ export const UA =
   "NewtailBrandCuration/1.0 (+https://newtail.example/brand-curation; research bot; contact: brand-curation@newtail.example)";
 
 export const TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS ?? 8000);
-export const MAX_BYTES = 2 * 1024 * 1024;
+export const MAX_BYTES = 5 * 1024 * 1024;
 export const RETRIES = 2;
 /** Read at call time (not import time) so the offline demo can zero the pacing. */
 const perDomainGapMs = () => Number(process.env.PER_DOMAIN_GAP_MS ?? 1000);

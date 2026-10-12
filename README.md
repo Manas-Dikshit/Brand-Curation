@@ -66,7 +66,7 @@ JSON in `config/` — edit without touching code:
 
 - `robots.txt` is honoured per origin before any fetch; a disallowed path is recorded
   as `robots`-blocked, not as "no data".
-- Same-domain redirects only, 2 MB cap, 8 s timeout, 2 retries.
+- Same-domain redirects only, 5 MB cap, 8 s timeout, 2 retries.
 - 1 req/s per domain plus a global bucket (~10 req/s) in `lib/util/fetch.ts`.
 - Responses cache to `.cache/http` for 7 days with ETag/Last-Modified revalidation;
   parsed facts cache to `.cache/facts` per schema version and brand.
