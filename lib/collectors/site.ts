@@ -8,10 +8,9 @@ const MATCH_THRESHOLD = 0.8;
 const TLDS = ["com", "in", "co.in", "co", "shop", "net", "io", "store"];
 // Priority order of probe batches: hits found in an earlier batch win.
 const PROBE_BATCH = 6;
-const PROBE_CAP = 40;
-/** Guessed domains: one quick attempt. A parked domain that never answers must not
- *  cost three timeouts, which made a no-website brand take ~160s to resolve. */
-const PROBE_FETCH = { retries: 0, timeoutMs: 4000 } as const;
+const PROBE_CAP = 12;
+/** Guessed domains: fast attempt for top candidates without stalling the queue. */
+const PROBE_FETCH = { retries: 0, timeoutMs: 2500 } as const;
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
