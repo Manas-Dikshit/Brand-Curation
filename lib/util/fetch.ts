@@ -295,22 +295,9 @@ export async function fetchPage(rawUrl: string, opts: { refresh?: boolean; retri
   }
 }
 
-/** Optional JS rendering. Off unless USE_PLAYWRIGHT=true; never throws. */
-export async function render(url: string, html: string): Promise<string> {
-  if (process.env.USE_PLAYWRIGHT !== "true") return html;
-  try {
-    // Indirection keeps the optional dependency out of the TS module graph.
-    const importOptional = new Function("s", "return import(s)") as (s: string) => Promise<any>;
-    const { chromium } = await importOptional("playwright");
-    const browser = await chromium.launch();
-    try {
-      const page = await browser.newPage({ userAgent: UA });
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
-      return await page.content();
-    } finally { await browser.close(); }
-  } catch (e) {
-    return html;
-  }
+/** Headless JS rendering placeholder. Returns raw HTML safely without external runtime dependencies. */
+export async function render(_url: string, html: string): Promise<string> {
+  return html;
 }
 
 export { sleep, registrable, domainOf };

@@ -229,6 +229,21 @@ export default function Home() {
     }
   }
 
+  function loadSampleBrands() {
+    setErrors([]);
+    setBrands([
+      { brand: "boAt", website: "https://www.boat-lifestyle.com", instagram: "boat.nirvana" },
+      { brand: "Bombay Shaving Company", website: "https://www.bombayshavingcompany.com", instagram: "bombayshavingofficial" },
+      { brand: "Sleepy Owl", website: "https://www.thesleepyowl.com", instagram: "thesleepyowl" },
+      { brand: "The Souled Store", website: "https://www.thesouledstore.com", instagram: "thesouledstore" },
+    ]);
+    setDupes([]);
+    setEvals([]);
+    setProgress(null);
+    setFeed([]);
+    sinceRef.current = 0;
+  }
+
   async function download() {
     // export what the analyst sees: local inline overrides + row errors included.
     // The server re-gates and re-totals whatever arrives, so nothing is trusted blindly.
@@ -330,6 +345,7 @@ export default function Home() {
             <div className="row">
               <input type="file" accept=".xlsx" aria-label="Brand list"
                 onChange={e => e.target.files?.[0] && uploadBrands(e.target.files[0])} />
+              <button className="btn" onClick={loadSampleBrands} disabled={busy || !ref?.ok}>Load sample brands (4)</button>
               <button className="btn" onClick={loadDemo} disabled={busy || !ref?.ok}>Load demo data (offline)</button>
             </div>
             {brands.length > 0 && (
@@ -435,10 +451,18 @@ export default function Home() {
                     </p>
                     {e.error && <p className="bad">{e.error}</p>}
                   </div>
-                  <p className="card__score">
-                    <span className="card__pct">{e.totalPct}<sup>%</sup></span>
-                    <span className="card__sub">weighted score</span>
-                  </p>
+                  <div className="card__score" style={{ textAlign: "right" }}>
+                    <p style={{ margin: 0 }}>
+                      <span className="card__pct">{e.totalPct}<sup>%</sup></span>
+                      <span className="card__sub">weighted score</span>
+                    </p>
+                    <span
+                      className={`chip ${e.totalPct >= 70 ? "chip--verified" : e.status === "Complete" ? "chip--unverified" : "chip--scored"}`}
+                      style={{ display: "inline-block", marginTop: 6, fontSize: "11px", letterSpacing: "0.04em" }}
+                    >
+                      {e.totalPct >= 70 ? "SELECTED (≥ 70%)" : e.status === "Complete" ? "NOT SELECTED (< 70%)" : "PENDING DATA (Partial)"}
+                    </span>
+                  </div>
                 </div>
 
                 {e.status !== "Complete" && (

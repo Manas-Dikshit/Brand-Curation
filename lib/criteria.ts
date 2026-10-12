@@ -20,8 +20,8 @@ export const META: Record<string, { key: keyof typeof rubric.ruleIds; pillar: Pi
   "Willingness to pay for visibility": { key: "visibility", pillar: "Brand Presence & Marketing", hint: "Needs documented trade/retail-media evidence" },
   "Quick-commerce presence": { key: "qcommerce", pillar: "Distribution Channels", hint: "Blocked platforms are excluded, not counted as absent" },
   "Offline distribution whitespace": { key: "whitespace", pillar: "Distribution Channels", hint: "Higher = LESS existing offline presence" },
-  "Retailer demand fit": { key: "retailer", pillar: "Distribution Channels", hint: "Match against retailer category + price needs" },
-  "Proven sell-through": { key: "sellthrough", pillar: "Distribution Channels", hint: "Cited bestseller rank or analyst feedback only" },
+  "Retailer demand fit": { key: "retailer", pillar: "Product & Market Fit", hint: "Match against retailer category + price needs" },
+  "Proven sell-through": { key: "sellthrough", pillar: "Revenue & Financial Performance", hint: "Cited bestseller rank or analyst feedback only" },
 };
 
 export const CRITERION_NAMES = Object.keys(META);

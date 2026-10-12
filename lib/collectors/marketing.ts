@@ -45,21 +45,28 @@ export async function collectMarketing(origin: string | null, homepageHtml: stri
       return $;
     };
 
-    if (homepageHtml) scan(homepageHtml, origin);
-    else {
+    let homeHtml = homepageHtml;
+    let homeUrl = origin;
+    if (homeHtml) {
+      scan(homeHtml, homeUrl);
+    } else {
       const home = await fetchPage(origin);
-      if (home.ok && home.body) scan(home.body, home.finalUrl);
-      else return { status: "failed", facts: { signals: [], pages: [] }, evidence: [],
-        notes: [`Marketing scan could not read the homepage: ${home.blocked ?? home.error}`] };
+      if (home.ok && home.body) {
+        homeHtml = home.body;
+        homeUrl = home.finalUrl;
+        scan(homeHtml, homeUrl);
+      } else {
+        return { status: "failed", facts: { signals: [], pages: [] }, evidence: [],
+          notes: [`Marketing scan could not read the homepage: ${home.blocked ?? home.error}`] };
+      }
     }
 
     // one extra page for press/blog recency + freshness of campaigns
-    const home = await fetchPage(origin);
-    if (home.ok && home.body) {
-      const $ = cheerio.load(home.body);
+    if (homeHtml) {
+      const $ = cheerio.load(homeHtml);
       const href = $("a[href*='/blog'], a[href*='/news'], a[href*='/press'], a[href*='/journal']").first().attr("href");
       if (href) {
-        const url = href.startsWith("http") ? href : new URL(href, home.finalUrl).toString();
+        const url = href.startsWith("http") ? href : new URL(href, homeUrl).toString();
         const r = await fetchPage(url);
         if (r.ok && r.body) {
           scan(r.body, r.finalUrl);

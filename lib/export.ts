@@ -41,6 +41,7 @@ export async function buildWorkbook(
 
   let r = 2;
   const firstDataRow = 2;
+  const lastDataRow = firstDataRow + Math.max(1, evaluations.length * criteria.length) - 1;
 
   for (const ev of evaluations) {
     const s = summarize(criteria, ev.results);
@@ -52,12 +53,15 @@ export async function buildWorkbook(
       row.getCell(3).value = c.name;
       row.getCell(4).value = x?.score ?? "Insufficient Data";
       row.getCell(5).value = c.weight;
+      row.getCell(5).numFmt = "0";
       row.getCell(6).value = { formula: `IF(ISNUMBER(D${r}),D${r}/5*E${r},0)` } as ExcelJS.CellValue;
+      row.getCell(6).numFmt = "0.00";
       row.getCell(7).value = x?.evidence ?? "";
       row.getCell(8).value = x?.sourceUrl ?? "";
       row.getCell(9).value = x?.verification ?? "Insufficient Data";
       row.getCell(10).value = x?.missing ?? "";
-      row.getCell(11).value = { formula: `SUMIFS($F$${firstDataRow}:$F$${firstDataRow + 10000},$A$${firstDataRow}:$A$${firstDataRow + 10000},$A${r})` } as ExcelJS.CellValue;
+      row.getCell(11).value = { formula: `SUMIFS($F$${firstDataRow}:$F$${lastDataRow},$A$${firstDataRow}:$A$${lastDataRow},$A${r})` } as ExcelJS.CellValue;
+      row.getCell(11).numFmt = "0.0";
       row.getCell(12).value = s.status;
       row.getCell(13).value = x?.source ?? "auto";
       row.getCell(14).value = x?.ruleId ?? "";
@@ -104,10 +108,15 @@ export async function buildWorkbook(
     const s = summarize(criteria, ev.results);
     const row = sm.getRow(sr);
     row.getCell(1).value = ev.brand;
-    row.getCell(2).value = { formula: `SUMIFS(Assessment!$F:$F,Assessment!$A:$A,$A${sr})` } as ExcelJS.CellValue;
+    row.getCell(2).value = { formula: `SUMIFS(Assessment!$F$${firstDataRow}:$F$${lastDataRow},Assessment!$A$${firstDataRow}:$A$${lastDataRow},$A${sr})` } as ExcelJS.CellValue;
+    row.getCell(2).numFmt = "0.0";
     row.getCell(3).value = s.assessedWeight;
+    row.getCell(3).numFmt = "0.0";
     row.getCell(4).value = s.status;
-    PILLARS.forEach((p, i) => { row.getCell(5 + i).value = s.pillarSubtotals[p]; });
+    PILLARS.forEach((p, i) => {
+      row.getCell(5 + i).value = s.pillarSubtotals[p];
+      row.getCell(5 + i).numFmt = "0.0";
+    });
     row.getCell(5 + PILLARS.length).value = ev.results.filter(x => x.source === "analyst").length;
     row.getCell(6 + PILLARS.length).value = ev.durationMs ? Math.round(ev.durationMs / 100) / 10 : null;
     row.getCell(7 + PILLARS.length).value = ev.error ?? "";
