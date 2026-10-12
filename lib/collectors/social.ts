@@ -53,7 +53,7 @@ export async function collectSocial(input: BrandInput, homepageHtml: string | nu
     const results = await Promise.all(links.map(async link => {
       const r = await fetchPage(link.url, { retries: 0, timeoutMs: 3500 });
       if (!r.ok || !r.body) {
-        const status = r.suspectedWall ? "login-walled" : r.blocked === "robots" ? "blocked" : "unreachable";
+        const status: SocialFacts["profiles"][number]["status"] = r.suspectedWall ? "login-walled" : r.blocked === "robots" ? "blocked" : "unreachable";
         return {
           profile: { platform: link.platform, url: link.url, followers: null, posts: null, likes: null, status },
           note: `${link.platform}: ${status} (${r.blocked ?? r.error}) — followers not read, treated as Insufficient Data.`,
