@@ -202,7 +202,7 @@ export async function fetchPage(rawUrl: string, opts: { refresh?: boolean; retri
   const start = normalise(rawUrl);
   if (!start) return ok({ url: rawUrl, blocked: "bad-url", error: `Unsupported URL: ${rawUrl}` });
 
-  const gate = await robotsAllows(start);
+  const gate = await robotsAllows(start, timeoutMs);
   if (!gate.allowed) return ok({ url: start, finalUrl: start, blocked: "robots", error: `robots.txt disallows ${gate.rule}` });
 
   const cached = readCache<HttpCacheEntry>("http", start);
