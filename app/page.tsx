@@ -107,6 +107,23 @@ export default function Home() {
     });
   }, [recalc]);
 
+  /** Pull a job's state once: used after a reload and if the live feed drops. */
+  const refreshJob = useCallback(async (id: string) => {
+    try {
+      const st = await (await fetch(`/api/jobs/${id}`)).json();
+      if (!st || st.error) { setErrors([st?.error ?? "Unknown job"]); return null; }
+      setBrands(st.inputs ?? []);
+      setEvals(recalc(st.evaluations ?? []));
+      const { total, done, running, failed, queued, etaSeconds, finished } = st;
+      setProgress({ total, done, running, failed, queued, etaSeconds, finished });
+      setErrors(Object.entries(st.errors ?? {}).map(([b, e]) => `${b}: ${e}`));
+      return st as { finished: boolean };
+    } catch (e) {
+      setErrors([`Lost contact with the run: ${e instanceof Error ? e.message : String(e)}`]);
+      return null;
+    }
+  }, [recalc]);
+
   const listen = useCallback((id: string) => {
     esRef.current?.close();
     const es = new EventSource(`/api/jobs/${id}/stream?since=${sinceRef.current}`);
@@ -118,8 +135,13 @@ export default function Home() {
       sinceRef.current = batch.at(-1)!.t + 1;
       setFeed(f => [...f.slice(-40), ...batch.map(b => `${b.brand === "*" ? "" : b.brand + " "}${b.type}${b.detail ? ": " + b.detail : ""}`)].slice(-40));
     });
-    es.onerror = () => { es.close(); };
-  }, [pushEvals]);
+    // The server closes the feed when the run ends; any other drop must not leave the
+    // page silently stuck, so re-read the job once and surface a failure if that also fails.
+    es.onerror = async () => {
+      const st = await refreshJob(id);
+      if (st?.finished) es.close();
+    };
+  }, [pushEvals, refreshJob]);
 
   async function uploadBrands(f: File) {
     setErrors([]);
@@ -132,16 +154,21 @@ export default function Home() {
 
   async function run() {
     setBusy(true); setErrors([]); setEvals([]); sinceRef.current = 0;
-    const res = await fetch("/api/jobs", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ brands }),
-    });
-    const j = await res.json();
-    setBusy(false);
-    if (!res.ok) return setErrors([j.error ?? "Run failed"]);
-    setJobId(j.jobId);
-    history.replaceState(null, "", `?job=${j.jobId}`);
-    listen(j.jobId);
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ brands }),
+      });
+      const j = await res.json();
+      if (!res.ok) return setErrors([j.error ?? "Run failed"]);
+      setJobId(j.jobId);
+      history.replaceState(null, "", `?job=${j.jobId}`);
+      listen(j.jobId);
+    } catch (e) {
+      setErrors([`Could not start the run — is the app server running? (${e instanceof Error ? e.message : String(e)})`]);
+    } finally {
+      setBusy(false);
+    }
   }
 
   /** A reload carries ?job=... in the URL, so an in-flight run reconnects itself. */
