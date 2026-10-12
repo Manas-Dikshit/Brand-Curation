@@ -113,13 +113,13 @@ function parseRobots(txt: string) {
   return me ? me.rules : [];
 }
 
-function loadRobots(origin: string) {
+function loadRobots(origin: string, timeoutMs = TIMEOUT_MS) {
   let p = robots.get(origin);
   if (!p) {
     p = (async () => {
       try {
         const ac = new AbortController();
-        const t = setTimeout(() => ac.abort(), TIMEOUT_MS);
+        const t = setTimeout(() => ac.abort(), timeoutMs);
         const r = await fetch(`${origin}/robots.txt`, { headers: { "user-agent": UA }, signal: ac.signal, redirect: "follow" });
         clearTimeout(t);
         if (!r.ok) return null;
@@ -191,10 +191,14 @@ function normalise(u: string) {
 
 /**
  * Keyless page fetch. Honours robots.txt, per-domain spacing, an 8s abort,
- * 2 retries with backoff, a 2 MB cap and same-domain-only redirects.
+ * 2 retries with backoff, a 5 MB cap and same-domain-only redirects.
+ * `retries`/`timeoutMs` override the defaults (domain-guessing probes pass 0/4000:
+ * a parked domain that never answers must not cost 3 timeouts).
  * Returns a result object for every outcome; never throws.
  */
-export async function fetchPage(rawUrl: string, opts: { refresh?: boolean } = {}): Promise<FetchResult> {
+export async function fetchPage(rawUrl: string, opts: { refresh?: boolean; retries?: number; timeoutMs?: number } = {}): Promise<FetchResult> {
+  const maxRetries = opts.retries ?? RETRIES;
+  const timeoutMs = opts.timeoutMs ?? TIMEOUT_MS;
   const start = normalise(rawUrl);
   if (!start) return ok({ url: rawUrl, blocked: "bad-url", error: `Unsupported URL: ${rawUrl}` });
 
@@ -221,9 +225,9 @@ export async function fetchPage(rawUrl: string, opts: { refresh?: boolean } = {}
       }
 
       let lastErr = "";
-      for (let attempt = 0; attempt <= RETRIES; attempt++) {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const ac = new AbortController();
-        const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+        const timer = setTimeout(() => ac.abort(), timeoutMs);
         try {
           const res = await fetch(url, { headers, signal: ac.signal, redirect: "manual" });
           clearTimeout(timer);
@@ -250,7 +254,7 @@ export async function fetchPage(rawUrl: string, opts: { refresh?: boolean } = {}
           if (!res.ok) {
             await res.body?.cancel().catch(() => {});
             lastErr = `HTTP ${res.status}`;
-            if ((res.status === 429 || res.status >= 500) && attempt < RETRIES) { await sleep(500 * 2 ** attempt); continue; }
+            if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) { await sleep(500 * 2 ** attempt); continue; }
             const body = (await readCapped(res)).body.slice(0, 4000);
             return ok({ url: start, finalUrl: url, status: res.status, body, contentType: res.headers.get("content-type") ?? "",
               blocked: "http-error", error: lastErr, suspectedWall: looksLikeWall(body, res.status) });
@@ -278,8 +282,8 @@ export async function fetchPage(rawUrl: string, opts: { refresh?: boolean } = {}
         } catch (e) {
           clearTimeout(timer);
           const msg = (e as Error).message;
-          lastErr = msg.includes("abort") ? `Timed out after ${TIMEOUT_MS}ms` : msg;
-          if (attempt < RETRIES) { await sleep(500 * 2 ** attempt); continue; }
+          lastErr = msg.includes("abort") ? `Timed out after ${timeoutMs}ms` : msg;
+          if (attempt < maxRetries) { await sleep(500 * 2 ** attempt); continue; }
         }
       }
       // fell through the retry loop without a redirect hop to take
