@@ -134,9 +134,9 @@ function loadRobots(origin: string, timeoutMs = TIMEOUT_MS) {
   return p;
 }
 
-export async function robotsAllows(url: string): Promise<{ allowed: boolean; rule?: string }> {
+export async function robotsAllows(url: string, timeoutMs = TIMEOUT_MS): Promise<{ allowed: boolean; rule?: string }> {
   const u = new URL(url);
-  const r = await loadRobots(u.origin);
+  const r = await loadRobots(u.origin, timeoutMs);
   if (!r) return { allowed: true };
   const path = u.pathname + u.search;
   let best: { path: string; allow: boolean } | null = null;
