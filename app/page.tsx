@@ -176,15 +176,9 @@ export default function Home() {
     const id = new URLSearchParams(window.location.search).get("job");
     if (!id) return;
     setJobId(id);
-    fetch(`/api/jobs/${id}`).then(r => r.json()).then(st => {
-      setBrands(st.inputs ?? []);
-      setEvals(recalc(st.evaluations ?? []));
-      const { total, done, running, failed, queued, etaSeconds, finished } = st;
-      setProgress({ total, done, running, failed, queued, etaSeconds, finished });
-      setErrors(Object.entries(st.errors ?? {}).map(([b, e]) => `${b}: ${e}`));
-    }).catch(() => { /* unknown job id: start clean */ });
+    refreshJob(id);
     listen(id);
-  }, [listen, recalc]);
+  }, [listen, refreshJob]);
 
   async function retryFailed() {
     if (!jobId) return;
