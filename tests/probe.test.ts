@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import { identityOf } from "./lib/collectors/site";
 import { brandMatchScore } from "./lib/util/text";
-import { UA } from "./lib/util/fetch";
+import { UA, fetchPage, MAX_BYTES, looksLikeWall } from "./lib/util/fetch";
 
 async function probe(url: string, brand: string) {
   const res = await fetch(url, {
@@ -24,4 +24,11 @@ test("identity probe", async () => {
   console.log("sleepy og:site_name:", JSON.stringify(sleepy.match(/og:site_name[^>]*content=["']([^"']*)/i)?.[1] ?? null));
   const b = boatLife.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1];
   console.log("boat-lifestyle <title>:", JSON.stringify(b));
-}, 120000);
+
+  console.log("\nMAX_BYTES:", MAX_BYTES);
+  const r = await fetchPage("https://www.boat-lifestyle.com/", { refresh: true });
+  console.log(JSON.stringify({
+    ok: r.ok, status: r.status, blocked: r.blocked, error: r.error,
+    bytes: r.body.length, suspectedWall: r.suspectedWall, wall: looksLikeWall(r.body, r.status),
+  }, null, 2));
+}, 240000);
