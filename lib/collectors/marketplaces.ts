@@ -58,33 +58,55 @@ export async function collectMarketplaces(brand: string): Promise<CollectorResul
     const notes: string[] = [];
     const ranks: MarketplaceRank[] = [];
 
-    for (const t of TARGETS) {
+    const results = await Promise.all(TARGETS.map(async t => {
       const url = t.url(brand);
-      const r = await fetchPage(url);
+      const r = await fetchPage(url, { retries: 0, timeoutMs: 3500 });
       if (!r.ok || r.suspectedWall || !r.body) {
         const blocked = r.suspectedWall || r.status === 403 || r.status === 429;
-        probes.push({ platform: t.platform, url, qc: t.qc, status: blocked ? "unverifiable-blocked" : "unverifiable-empty", matchedTitle: null });
-        notes.push(`${t.platform}: ${blocked ? "bot-protected or login-walled" : `not readable (${r.blocked ?? r.error})`} — excluded from the denominator, NOT counted as absent.`);
-        evidence.push(ev(`${t.platform} search page for "${brand}" is ${blocked ? "blocked" : "unreadable"} (${r.status || r.blocked}). Recorded as unverifiable, not as absent.`, url, r.fetchedAt));
-        continue;
+        return {
+          probe: { platform: t.platform, url, qc: t.qc, status: (blocked ? "unverifiable-blocked" : "unverifiable-empty") as MarketplaceProbe["status"], matchedTitle: null },
+          note: `${t.platform}: ${blocked ? "bot-protected or login-walled" : `not readable (${r.blocked ?? r.error})`} — excluded from the denominator, NOT counted as absent.`,
+          evidence: ev(`${t.platform} search page for "${brand}" is ${blocked ? "blocked" : "unreadable"} (${r.status || r.blocked}). Recorded as unverifiable, not as absent.`, url, r.fetchedAt),
+          ranks: [] as MarketplaceRank[],
+        };
       }
 
       const titles = extractCandidateTitles(r.body);
-      const hit = titles.map(t => ({ t, s: brandMatchScore(brand, t) })).sort((a, b) => b.s - a.s)[0];
+      const hit = titles.map(x => ({ t: x, s: brandMatchScore(brand, x) })).sort((a, b) => b.s - a.s)[0];
       const isWall = looksLikeWall(r.body, r.status);
       const hasNoResults = NO_RESULTS.test(r.body);
 
       if (hit && hit.s >= MATCH_THRESHOLD && !isWall) {
-        probes.push({ platform: t.platform, url: r.finalUrl, qc: t.qc, status: "present", matchedTitle: hit.t });
-        evidence.push(ev(`${t.platform}: listing found. Product title fuzzy-matched "${hit.t}" to brand "${brand}" (score ${hit.s.toFixed(2)}).`, r.finalUrl, r.fetchedAt));
-        for (const rk of extractRanks(t.platform, r.body, hit.t)) ranks.push({ ...rk, url: r.finalUrl });
+        const foundRanks: MarketplaceRank[] = [];
+        for (const rk of extractRanks(t.platform, r.body, hit.t)) foundRanks.push({ ...rk, url: r.finalUrl });
+        return {
+          probe: { platform: t.platform, url: r.finalUrl, qc: t.qc, status: "present" as const, matchedTitle: hit.t },
+          note: null,
+          evidence: ev(`${t.platform}: listing found. Product title fuzzy-matched "${hit.t}" to brand "${brand}" (score ${hit.s.toFixed(2)}).`, r.finalUrl, r.fetchedAt),
+          ranks: foundRanks,
+        };
       } else if (hasNoResults || titles.length > 3) {
-        probes.push({ platform: t.platform, url: r.finalUrl, qc: t.qc, status: "absent", matchedTitle: null });
-        evidence.push(ev(`${t.platform}: no listing for "${brand}" in the public search results (page loaded, ${hasNoResults ? "explicit no-results state" : `${titles.length} unrelated product titles`}).`, r.finalUrl, r.fetchedAt));
+        return {
+          probe: { platform: t.platform, url: r.finalUrl, qc: t.qc, status: "absent" as const, matchedTitle: null },
+          note: null,
+          evidence: ev(`${t.platform}: no listing for "${brand}" in the public search results (page loaded, ${hasNoResults ? "explicit no-results state" : `${titles.length} unrelated product titles`}).`, r.finalUrl, r.fetchedAt),
+          ranks: [] as MarketplaceRank[],
+        };
       } else {
-        probes.push({ platform: t.platform, url: r.finalUrl, qc: t.qc, status: "unverifiable-blocked", matchedTitle: null });
-        notes.push(`${t.platform}: page loaded but looks like a JS shell — presence unknown, not counted as absent.`);
+        return {
+          probe: { platform: t.platform, url: r.finalUrl, qc: t.qc, status: "unverifiable-blocked" as const, matchedTitle: null },
+          note: `${t.platform}: page loaded but looks like a JS shell — presence unknown, not counted as absent.`,
+          evidence: null,
+          ranks: [] as MarketplaceRank[],
+        };
       }
+    }));
+
+    for (const res of results) {
+      probes.push(res.probe);
+      if (res.note) notes.push(res.note);
+      if (res.evidence) evidence.push(res.evidence);
+      if (res.ranks.length) ranks.push(...res.ranks);
     }
 
     return {

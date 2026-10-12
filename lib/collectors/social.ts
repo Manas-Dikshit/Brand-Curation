@@ -50,14 +50,15 @@ export async function collectSocial(input: BrandInput, homepageHtml: string | nu
     }
 
     const profiles: SocialFacts["profiles"] = [];
-    for (const link of links) {
-      const r = await fetchPage(link.url);
+    const results = await Promise.all(links.map(async link => {
+      const r = await fetchPage(link.url, { retries: 0, timeoutMs: 3500 });
       if (!r.ok || !r.body) {
         const status = r.suspectedWall ? "login-walled" : r.blocked === "robots" ? "blocked" : "unreachable";
-        profiles.push({ platform: link.platform, url: link.url, followers: null, posts: null, likes: null, status });
-        notes.push(`${link.platform}: ${status} (${r.blocked ?? r.error}) — followers not read, treated as Insufficient Data.`);
-        evidence.push(ev(`${link.platform} profile ${link.url} not readable: ${r.blocked ?? r.error}. Recorded as Insufficient Data, NOT as zero followers.`, link.url, r.fetchedAt));
-        continue;
+        return {
+          profile: { platform: link.platform, url: link.url, followers: null, posts: null, likes: null, status },
+          note: `${link.platform}: ${status} (${r.blocked ?? r.error}) — followers not read, treated as Insufficient Data.`,
+          evidence: ev(`${link.platform} profile ${link.url} not readable: ${r.blocked ?? r.error}. Recorded as Insufficient Data, NOT as zero followers.`, link.url, r.fetchedAt),
+        };
       }
       const $ = cheerio.load(r.body);
       const desc =
@@ -66,18 +67,22 @@ export async function collectSocial(input: BrandInput, homepageHtml: string | nu
         $("body").text().slice(0, 3000);
       const parsed = parseSocialMeta(desc);
       const hasNumbers = parsed.followers !== null || parsed.posts !== null;
-      profiles.push({
-        platform: link.platform, url: r.finalUrl, followers: parsed.followers, posts: parsed.posts, likes: parsed.likes,
-        status: hasNumbers ? "parsed" : r.suspectedWall ? "login-walled" : "unreachable",
-      });
-      if (hasNumbers) {
-        evidence.push(ev(
-          `${link.platform} public meta: ${parsed.followers !== null ? `${parsed.followers} followers` : "followers not stated"}${parsed.posts !== null ? `, ${parsed.posts} posts` : ""}${parsed.likes !== null ? `, ${parsed.likes} likes` : ""} (from og:description)`,
-          r.finalUrl, r.fetchedAt,
-        ));
-      } else {
-        notes.push(`${link.platform}: follower/post counts are not in public markup (login wall or JS-rendered) — Insufficient Data.`);
-      }
+      return {
+        profile: {
+          platform: link.platform, url: r.finalUrl, followers: parsed.followers, posts: parsed.posts, likes: parsed.likes,
+          status: (hasNumbers ? "parsed" : r.suspectedWall ? "login-walled" : "unreachable") as SocialFacts["profiles"][number]["status"],
+        },
+        note: hasNumbers ? null : `${link.platform}: follower/post counts are not in public markup (login wall or JS-rendered) — Insufficient Data.`,
+        evidence: hasNumbers
+          ? ev(`${link.platform} public meta: ${parsed.followers !== null ? `${parsed.followers} followers` : "followers not stated"}${parsed.posts !== null ? `, ${parsed.posts} posts` : ""}${parsed.likes !== null ? `, ${parsed.likes} likes` : ""} (from og:description)`, r.finalUrl, r.fetchedAt)
+          : null,
+      };
+    }));
+
+    for (const res of results) {
+      profiles.push(res.profile);
+      if (res.note) notes.push(res.note);
+      if (res.evidence) evidence.push(res.evidence);
     }
 
     return { status: profiles.some(p => p.status === "parsed") ? "ok" : profiles.length ? "partial" : "skipped",
