@@ -232,14 +232,22 @@ export default function Home() {
   async function download() {
     // export what the analyst sees: local inline overrides + row errors included.
     // The server re-gates and re-totals whatever arrives, so nothing is trusted blindly.
-    const res = await fetch("/api/export", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ evaluations: evals, duplicates: dupes, importErrors }),
-    });
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "brand_curation_output.xlsx"; a.click();
-    URL.revokeObjectURL(a.href);
+    try {
+      const res = await fetch("/api/export", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ evaluations: evals, duplicates: dupes, importErrors }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        return setErrors([j.error ?? `Export failed (${res.status})`]);
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "brand_curation_output.xlsx"; a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      setErrors([`Export failed: ${e instanceof Error ? e.message : String(e)}`]);
+    }
   }
 
   return (
