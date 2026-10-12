@@ -304,13 +304,25 @@ export default function Home() {
               <button className="btn" onClick={loadDemo} disabled={busy || !ref?.ok}>Load demo data (offline)</button>
             </div>
             {brands.length > 0 && (
-              <div className="row">
-                <span className="lede">{brands.length} brand{brands.length === 1 ? "" : "s"} ready.</span>
-                {dupes.length > 0 && <span className="warn">Collapsed {dupes.length} duplicate(s): {dupes.join(", ")}</span>}
-                <button className="btn btn--accent" disabled={busy || !ref?.ok} onClick={run}>
-                  {busy ? "Starting…" : "Run evaluation"}
-                </button>
-              </div>
+              <>
+                <div className="row">
+                  <span className="lede">{brands.length} brand{brands.length === 1 ? "" : "s"} ready.</span>
+                  {dupes.length > 0 && <span className="warn">Collapsed {dupes.length} duplicate(s): {dupes.join(", ")}</span>}
+                  <button className="btn btn--accent" disabled={busy || !ref?.ok} onClick={run}>
+                    {busy ? "Starting…" : "Run evaluation"}
+                  </button>
+                </div>
+                <details>
+                  <summary className="index small">Preview the ready brands</summary>
+                  <ul className="plain">
+                    {brands.map(b => (
+                      <li key={b.brand}>
+                        {b.brand}{b.website ? ` — ${b.website}` : ""}{b.instagram ? ` — @${b.instagram}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
             )}
           </div>
         </section>
