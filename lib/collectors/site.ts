@@ -47,8 +47,8 @@ export async function resolveSite(input: BrandInput): Promise<CollectorResult<Si
     const notes: string[] = [];
     const tried: string[] = [];
 
-    const check = async (url: string): Promise<{ ok: boolean; score: number; name: string | null } | null> => {
-      const r = await fetchPage(url);
+    const check = async (url: string, opts?: { retries?: number; timeoutMs?: number }): Promise<{ ok: boolean; score: number; name: string | null } | null> => {
+      const r = await fetchPage(url, opts);
       tried.push(url);
       if (!r.ok || !r.body) {
         notes.push(`${url}: ${r.blocked ?? "error"} ${r.error ?? ""}`.trim());
@@ -100,7 +100,7 @@ export async function resolveSite(input: BrandInput): Promise<CollectorResult<Si
     const toProbe = candidates.slice(0, PROBE_CAP);
     for (let i = 0; i < toProbe.length; i += PROBE_BATCH) {
       const batch = toProbe.slice(i, i + PROBE_BATCH);
-      const results = await Promise.all(batch.map(url => check(url)));
+      const results = await Promise.all(batch.map(url => check(url, PROBE_FETCH)));
       const win = results.findIndex(r => r?.ok);
       if (win >= 0) {
         const url = batch[win];
