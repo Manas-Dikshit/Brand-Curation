@@ -117,9 +117,9 @@ export async function collectJsonLd(origin: string | null): Promise<CollectorRes
     notes.push(...smNotes);
 
     const products: JsonLdFacts["products"] = [];
-    for (const url of urls) {
-      const r = await fetchPage(url);
-      if (!r.ok) continue;
+    const productPages = await Promise.all(urls.slice(0, 3).map(url => fetchPage(url, { retries: 0, timeoutMs: 3500 })));
+    for (const r of productPages) {
+      if (!r.ok || !r.body) continue;
       const { nodes } = parseJsonLd(r.body);
       pages++;
       for (const n of nodes) {
