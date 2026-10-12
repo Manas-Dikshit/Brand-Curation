@@ -3,13 +3,13 @@ import { cacheFresh, readCache, writeCache, type HttpCacheEntry } from "./cache"
 export const UA =
   "NewtailBrandCuration/1.0 (+https://newtail.example/brand-curation; research bot; contact: brand-curation@newtail.example)";
 
-export const TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS ?? 8000);
+export const TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS ?? 5000);
 export const MAX_BYTES = 5 * 1024 * 1024;
-export const RETRIES = 2;
+export const RETRIES = 1;
 /** Read at call time (not import time) so the offline demo can zero the pacing. */
-const perDomainGapMs = () => Number(process.env.PER_DOMAIN_GAP_MS ?? 1000);
-/** Global token bucket: one request per this many ms across every domain (~10 req/s). */
-const globalGapMs = () => Number(process.env.GLOBAL_REQUEST_GAP_MS ?? 100);
+const perDomainGapMs = () => Number(process.env.PER_DOMAIN_GAP_MS ?? 150);
+/** Global token bucket: space requests across every domain (~40 req/s). */
+const globalGapMs = () => Number(process.env.GLOBAL_REQUEST_GAP_MS ?? 25);
 
 export type Blocked =
   | "robots" | "timeout" | "too-large" | "network" | "http-error"
