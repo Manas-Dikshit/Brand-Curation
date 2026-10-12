@@ -41,9 +41,13 @@ export async function collectRetail(origin: string | null, homepageHtml: string 
     }
     for (const p of LOCATOR_PATHS) candidateUrls.add(new URL(p, origin).toString());
 
-    const urls = [...candidateUrls].slice(0, 5);
-    for (const url of urls) {
-      const r = await fetchPage(url);
+    const urls = [...candidateUrls].slice(0, 4);
+    const probeResults = await Promise.all(urls.map(async url => {
+      const r = await fetchPage(url, { retries: 0, timeoutMs: 3500 });
+      return { url, r };
+    }));
+
+    for (const { r } of probeResults) {
       if (!r.ok || !r.body || r.suspectedWall) continue;
       const $ = cheerio.load(r.body);
       const text = $("body").text().replace(/\s+/g, " ");
