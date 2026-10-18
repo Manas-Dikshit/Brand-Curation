@@ -109,19 +109,29 @@ export default function Home() {
 
   /** Pull a job's state once: used after a reload and if the live feed drops. */
   const refreshJob = useCallback(async (id: string) => {
+    let res: Response;
     try {
-      const st = await (await fetch(`/api/jobs/${id}`)).json();
-      if (!st || st.error) { setErrors([st?.error ?? "Unknown job"]); return null; }
-      setBrands(st.inputs ?? []);
-      setEvals(recalc(st.evaluations ?? []));
-      const { total, done, running, failed, queued, etaSeconds, finished } = st;
-      setProgress({ total, done, running, failed, queued, etaSeconds, finished });
-      setErrors(Object.entries(st.errors ?? {}).map(([b, e]) => `${b}: ${e}`));
-      return st as { finished: boolean };
+      res = await fetch(`/api/jobs/${id}`);
     } catch (e) {
       setErrors([`Lost contact with the run: ${e instanceof Error ? e.message : String(e)}`]);
       return null;
     }
+    const st = await res.json().catch(() => null);
+    if (!res.ok || !st || st.error) {
+      // The run is gone (server restarted, or the job never persisted). Drop the stale
+      // ?job= so the page stops polling a 404 and the user can start a fresh run.
+      setJobId(null);
+      setProgress(null);
+      window.history.replaceState(null, "", window.location.pathname);
+      setErrors(["That run is no longer available — click Run evaluation to start again."]);
+      return null;
+    }
+    setBrands(st.inputs ?? []);
+    setEvals(recalc(st.evaluations ?? []));
+    const { total, done, running, failed, queued, etaSeconds, finished } = st;
+    setProgress({ total, done, running, failed, queued, etaSeconds, finished });
+    setErrors(Object.entries(st.errors ?? {}).map(([b, e]) => `${b}: ${e}`));
+    return st as { finished: boolean };
   }, [recalc]);
 
   const listen = useCallback((id: string) => {
@@ -137,9 +147,10 @@ export default function Home() {
     });
     // The server closes the feed when the run ends; any other drop must not leave the
     // page silently stuck, so re-read the job once and surface a failure if that also fails.
+    // EventSource reconnects on error by itself, so close it unless the run is still live.
     es.onerror = async () => {
       const st = await refreshJob(id);
-      if (st?.finished) es.close();
+      if (!st || st.finished) es.close();
     };
   }, [pushEvals, refreshJob]);
 
@@ -176,8 +187,9 @@ export default function Home() {
     const id = new URLSearchParams(window.location.search).get("job");
     if (!id) return;
     setJobId(id);
-    refreshJob(id);
-    listen(id);
+    // Only attach the live feed if the job still exists and is unfinished; refreshJob
+    // has already loaded a finished one (or cleared a dead one).
+    refreshJob(id).then(st => { if (st && !st.finished) listen(id); });
   }, [listen, refreshJob]);
 
   async function retryFailed() {
